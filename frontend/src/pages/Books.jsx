@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import bookService from '../services/bookService';
+import reservationService from '../services/reservationService';
 import BookSearch from '../components/BookSearch';
 import Loading from '../components/Loading';
 import ErrorMessage from '../components/ErrorMessage';
@@ -16,6 +17,11 @@ function Books() {
   const [loading, setLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
+
+  // Reservation feedback state
+  const [reservingId, setReservingId] = useState(null);
+  const [resSuccess, setResSuccess] = useState('');
+  const [resError, setResError] = useState('');
 
   // 1. Debounce Effect: Synchronize user typing with debouncedSearch (400ms delay)
   useEffect(() => {
@@ -97,12 +103,43 @@ function Books() {
     setDebouncedSearch('');
   };
 
+  // Handler: Direct book reservation from catalog card
+  const handleReserve = async (book) => {
+    setReservingId(book.id);
+    setResSuccess('');
+    setResError('');
+
+    try {
+      await reservationService.createReservation(book.id);
+      setResSuccess(
+        `Successfully placed a hold for "${book.title}"! A copy has been reserved for you.`
+      );
+      // Instantaneously update local copy count
+      setBooks((prev) =>
+        prev.map((b) =>
+          b.id === book.id
+            ? { ...b, available_copies: Math.max(0, b.available_copies - 1) }
+            : b
+        )
+      );
+    } catch (err) {
+      console.error('Reservation error:', err);
+      if (err.status === 409) {
+        setResError(`You already have an active reservation for "${book.title}".`);
+      } else {
+        setResError(err.message || 'Unable to reserve book. Please try again.');
+      }
+    } finally {
+      setReservingId(null);
+    }
+  };
+
   return (
     <div className="page-container">
       <div className="page-header">
         <h1 className="page-title">Library Book Inventory</h1>
         <p className="page-subtitle">
-          Search across title, ISBN, author name, or category with real-time stock availability.
+          Search across title, ISBN, author name, or category with real-time stock availability and instant hold reservation.
         </p>
 
         {/* Integrated Controlled Search & Filter Toolbar */}
@@ -116,6 +153,24 @@ function Books() {
           totalResults={books.length}
         />
       </div>
+
+      {/* Reservation Action Feedback Banners */}
+      {resSuccess && (
+        <div className="success-banner" role="status">
+          <div className="banner-content-with-action">
+            <span>✅ {resSuccess}</span>
+            <Link to="/dashboard" className="banner-link">
+              View in Dashboard &rarr;
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {resError && (
+        <div style={{ marginBottom: '1rem' }}>
+          <ErrorMessage message={resError} />
+        </div>
+      )}
 
       {loading && <Loading message="Loading book inventory..." />}
 
@@ -180,7 +235,7 @@ function Books() {
                   <span
                     className={`stock-badge ${isAvailable ? 'badge-in-stock' : 'badge-out-of-stock'}`}
                   >
-                    {isAvailable ? `${book.available_copies} Available` : 'Currently Unavailable'}
+                    {isAvailable ? `${book.available_copies} Available` : 'Unavailable'}
                   </span>
                 </div>
 
@@ -201,9 +256,30 @@ function Books() {
                 </div>
 
                 <div className="book-card-footer">
-                  <Link to={`/books/${book.id}`} className="btn btn-outline btn-block">
-                    View Details &rarr;
-                  </Link>
+                  <div className="book-card-actions">
+                    {isAvailable ? (
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm btn-reserve"
+                        onClick={() => handleReserve(book)}
+                        disabled={reservingId === book.id}
+                      >
+                        {reservingId === book.id ? 'Reserving...' : '📑 Reserve'}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm btn-reserve"
+                        disabled
+                        title="No copies currently available"
+                      >
+                        Unavailable
+                      </button>
+                    )}
+                    <Link to={`/books/${book.id}`} className="btn btn-outline btn-sm btn-details">
+                      Details &rarr;
+                    </Link>
+                  </div>
                 </div>
               </div>
             );

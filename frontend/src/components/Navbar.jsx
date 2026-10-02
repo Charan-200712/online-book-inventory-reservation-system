@@ -42,6 +42,12 @@ function Navbar() {
               >
                 Authors
               </NavLink>
+              <NavLink
+                to="/dashboard"
+                className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+              >
+                Dashboard
+              </NavLink>
 
               <div className="nav-user-section">
                 <span className="user-greeting">

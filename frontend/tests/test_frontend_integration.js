@@ -1,6 +1,7 @@
 /**
  * Frontend Integration Test Suite
- * Tests frontend services, authentication, book search, filters, and request cancellation.
+ * Tests frontend services, authentication, book search, filters, request cancellation,
+ * user dashboard data, reservations, and circulation history.
  */
 
 import http from 'http';
@@ -15,7 +16,7 @@ globalThis.localStorage = {
 };
 
 // Configure environment variable for Vite
-process.env.VITE_API_BASE_URL = 'http://localhost:5006/api';
+process.env.VITE_API_BASE_URL = 'http://localhost:5007/api';
 
 async function runFrontendIntegrationTests() {
   console.log('=== RUNNING FRONTEND API INTEGRATION TEST SUITE ===\n');
@@ -27,8 +28,10 @@ async function runFrontendIntegrationTests() {
   const { authService } = await import('../src/services/authService.js');
   const { bookService } = await import('../src/services/bookService.js');
   const { authorService } = await import('../src/services/authorService.js');
+  const { reservationService } = await import('../src/services/reservationService.js');
+  const { transactionService } = await import('../src/services/transactionService.js');
 
-  const PORT = 5006;
+  const PORT = 5007;
   const server = app.listen(PORT, async () => {
     let failed = false;
 
@@ -168,20 +171,96 @@ async function runFrontendIntegrationTests() {
         }
       }
 
-      // 10. Authors Service
-      console.log('\n--- 6. AUTHORS DIRECTORY SERVICE ---');
+      // 10. User Dashboard & Reservations Integration (Phase 9 Feature)
+      console.log('\n--- 6. USER DASHBOARD & RESERVATION FRONTEND (PHASE 9) ---');
+
+      // Create a dedicated test book to reserve and cancel cleanly
+      await db.query('DELETE FROM books WHERE isbn = ?', ['978-9998887776']);
+      const [insertBookRes] = await db.query(
+        `INSERT INTO books (title, isbn, author_id, category, total_copies, available_copies, description)
+         VALUES (?, ?, 1, 'Testing', 3, 3, 'Phase 9 Integration Test Book')`,
+        ['Dashboard Test Book', '978-9998887776']
+      );
+      const testBookId = insertBookRes.insertId;
+
+      // 10a. Create Reservation via reservationService
+      const resData = await reservationService.createReservation(testBookId);
+      if (resData.reservation && resData.reservation.id) {
+        console.log('6a. reservationService.createReservation(): PASS (Res ID:', resData.reservation.id + ', Book:', resData.reservation.book_title + ')');
+      } else {
+        throw new Error('createReservation failed to return reservation object');
+      }
+      const createdResId = resData.reservation.id;
+
+      // 10b. Duplicate Reservation Attempt (must return 409 Conflict)
+      try {
+        await reservationService.createReservation(testBookId);
+        console.error('FAIL: Duplicate active reservation should have been rejected');
+        failed = true;
+      } catch (dupErr) {
+        if (dupErr.status === 409) {
+          console.log('6b. Duplicate reservation rejected: PASS (Status 409 Conflict -', dupErr.message + ')');
+        } else {
+          throw dupErr;
+        }
+      }
+
+      // 10c. Get My Reservations (Dashboard)
+      const myReservations = await reservationService.getMyReservations();
+      const foundRes = myReservations.find(r => r.id === createdResId);
+      if (foundRes && foundRes.book_title === 'Dashboard Test Book' && foundRes.status === 'PENDING') {
+        console.log('6c. reservationService.getMyReservations(): PASS (Found reservation in PENDING state)');
+      } else {
+        throw new Error('getMyReservations did not include created reservation');
+      }
+
+      // 10d. Cancel Reservation via reservationService
+      const cancelRes = await reservationService.cancelReservation(createdResId);
+      if (cancelRes.success) {
+        console.log('6d. reservationService.cancelReservation(): PASS (' + cancelRes.message + ')');
+      } else {
+        throw new Error('cancelReservation did not return success');
+      }
+
+      // 10e. Re-cancellation Attempt (must fail with 409 Conflict)
+      try {
+        await reservationService.cancelReservation(createdResId);
+        console.error('FAIL: Re-cancelling already cancelled reservation should be rejected');
+        failed = true;
+      } catch (recancelErr) {
+        if (recancelErr.status === 409) {
+          console.log('6e. Re-cancellation rejected: PASS (Status 409 Conflict -', recancelErr.message + ')');
+        } else {
+          throw recancelErr;
+        }
+      }
+
+      // 10f. Get My Transactions (Dashboard)
+      const myTransactions = await transactionService.getMyTransactions();
+      if (Array.isArray(myTransactions)) {
+        console.log('6f. transactionService.getMyTransactions(): PASS (Retrieved', myTransactions.length, 'circulation records)');
+      } else {
+        throw new Error('getMyTransactions did not return array');
+      }
+
+      // Clean up test book & reservation
+      await db.query('DELETE FROM reservations WHERE id = ?', [createdResId]);
+      await db.query('DELETE FROM books WHERE id = ?', [testBookId]);
+
+      // 11. Authors Service
+      console.log('\n--- 7. AUTHORS DIRECTORY SERVICE ---');
       const authors = await authorService.getAuthors();
       if (Array.isArray(authors) && authors.length > 0) {
-        console.log('6a. authorService.getAuthors(): PASS (Total Authors:', authors.length + ')');
+        console.log('7a. authorService.getAuthors(): PASS (Total Authors:', authors.length + ')');
       } else {
         throw new Error('Failed to retrieve authors list');
       }
 
-      // 11. Logout & Cleanup
-      console.log('\n--- 7. LOGOUT & POST-LOGOUT PROTECTION ---');
+      // 12. Logout & Cleanup
+      console.log('\n--- 8. LOGOUT & POST-LOGOUT PROTECTION ---');
       await authService.logout();
       localStorage.removeItem('token');
-      console.log('7a. authService.logout() & localStorage cleanup: PASS');
+      console.log('8a. authService.logout() & localStorage cleanup: PASS');
 
       // Verify unauthenticated again
       try {
@@ -189,10 +268,10 @@ async function runFrontendIntegrationTests() {
         console.error('FAIL: Expected getBooks to fail after logout');
         failed = true;
       } catch (err) {
-        console.log('7b. Request after logout rejected: PASS (Status:', err.status + ')');
+        console.log('8b. Request after logout rejected: PASS (Status:', err.status + ')');
       }
 
-      console.log('\n=== ALL 14 FRONTEND INTEGRATION TESTS PASSED (100%) ===\n');
+      console.log('\n=== ALL 20 FRONTEND INTEGRATION TESTS PASSED (100%) ===\n');
 
     } catch (testError) {
       console.error('Frontend Integration Test Failed:', testError);

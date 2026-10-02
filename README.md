@@ -27,7 +27,7 @@ A departmental library requires a web application to manage book stocks, search 
 * VS Code
 
 ## Current Phase
-Phase 8 — Live Book Search, Controlled Forms & React useEffect Synchronization (Complete)
+Phase 9 — User Dashboard & Reservation Frontend (Complete)
 
 ## Implemented & Planned Features
 * [x] Project architecture & Express setup (Phase 1)
@@ -39,7 +39,8 @@ Phase 8 — Live Book Search, Controlled Forms & React useEffect Synchronization
 * [x] Circulation transactions (issue, return, due dates, overdue detection) (Phase 6)
 * [x] React frontend foundation, routing, JWT auth context & API integration (Phase 7)
 * [x] Live book search, controlled forms & useEffect synchronization (Phase 8)
-* [ ] Complete reservation & loan circulation user/admin workflows (Phase 9+)
+* [x] User dashboard, book reservations, self-cancellation & circulation history (Phase 9)
+* [ ] Administrator dashboard & circulation management (Phase 10+)
 
 ## Project Structure
 ```text

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import bookService from '../services/bookService';
+import reservationService from '../services/reservationService';
 import Loading from '../components/Loading';
 import ErrorMessage from '../components/ErrorMessage';
 
@@ -9,6 +10,10 @@ function BookDetails() {
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const [reserving, setReserving] = useState(false);
+  const [resSuccess, setResSuccess] = useState('');
+  const [resError, setResError] = useState('');
 
   const loadBook = async () => {
     setLoading(true);
@@ -26,6 +31,33 @@ function BookDetails() {
   useEffect(() => {
     loadBook();
   }, [id]);
+
+  const handleReserve = async () => {
+    if (!book) return;
+
+    setReserving(true);
+    setResSuccess('');
+    setResError('');
+
+    try {
+      await reservationService.createReservation(book.id);
+      setResSuccess(
+        `Successfully placed a hold for "${book.title}"! A copy is reserved for you.`
+      );
+      // Reload book data to update available_copies
+      const updatedBook = await bookService.getBookById(id);
+      setBook(updatedBook);
+    } catch (err) {
+      console.error('Reservation error:', err);
+      if (err.status === 409) {
+        setResError('You already have an active reservation for this book.');
+      } else {
+        setResError(err.message || 'Unable to reserve book. Please try again.');
+      }
+    } finally {
+      setReserving(false);
+    }
+  };
 
   if (loading) {
     return <Loading message="Loading book details..." />;
@@ -99,10 +131,41 @@ function BookDetails() {
                 </li>
               </ul>
 
-              <div className="reservation-notice-box">
-                <p>
-                  <strong>Note:</strong> Online reservation submission workflows will be activated in an upcoming phase.
-                </p>
+              {/* Reservation Action Box */}
+              <div className="reservation-action-panel">
+                {resSuccess && (
+                  <div className="success-banner" style={{ marginBottom: '1rem' }} role="status">
+                    <div>
+                      <p>✅ {resSuccess}</p>
+                      <Link to="/dashboard" className="text-sm font-semibold" style={{ color: 'var(--success)' }}>
+                        View in Dashboard &rarr;
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {resError && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <ErrorMessage message={resError} />
+                  </div>
+                )}
+
+                {book.available_copies > 0 ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-block btn-lg"
+                    onClick={handleReserve}
+                    disabled={reserving}
+                  >
+                    {reserving ? 'Reserving Copy...' : '📑 Reserve This Book'}
+                  </button>
+                ) : (
+                  <div className="reservation-notice-box out-of-stock-notice">
+                    <p>
+                      ⚠️ All copies of this volume are currently held or checked out. Please check back later.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

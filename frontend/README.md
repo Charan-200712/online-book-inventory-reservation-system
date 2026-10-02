@@ -17,9 +17,17 @@ Single-page React application built with Vite, React Router, React Hooks, and Co
 - **Combined Availability Filtering (Phase 8)**:
   - Controlled availability selection: All Books, Available Only (`available_copies > 0`), Unavailable Only (`available_copies = 0`).
   - Seamlessly combines search terms with stock status (e.g. `/api/books/search?q=Clean&available=true`).
+- **User Dashboard & Circulation (Phase 9)**:
+  - Personal member profile card and circulation overview metrics.
+  - Active reservation management with self-service cancellation for eligible holds and automated copy restitution.
+  - Full loan circulation history displaying issue dates, due dates, return dates, and overdue status badges.
+- **Book Hold Reservations (Phase 9)**:
+  - Interactive "Reserve Book" actions available on book cards (`/books`) and details page (`/books/:id`).
+  - Concurrency-safe hold creation via `POST /api/reservations` with instantaneous local inventory feedback.
+  - Duplicate reservation detection with friendly error banners (409 Conflict).
 - **Catalog & Details**:
-  - Book catalog with availability badge indicators and live result count feedback (`/books`).
-  - Book details view displaying inventory metrics and volume descriptions (`/books/:id`).
+  - Book catalog with availability badge indicators, instant reservation buttons, and live result count feedback (`/books`).
+  - Book details view displaying inventory metrics, volume descriptions, and reservation panel (`/books/:id`).
   - Authors directory (`/authors`).
 
 ## Directory Structure
@@ -27,33 +35,36 @@ Single-page React application built with Vite, React Router, React Hooks, and Co
 ```text
 frontend/src/
 ├── components/
-│   ├── BookSearch.jsx      # Controlled search bar, clear button, & availability filter
-│   ├── ErrorMessage.jsx    # Alert banner with optional retry
-│   ├── Loading.jsx         # Accessible loading spinner
-│   ├── Navbar.jsx          # Auth-aware top navigation & role badges
-│   └── ProtectedRoute.jsx  # Route guard for authenticated pages
+│   ├── BookSearch.jsx         # Controlled search bar, clear button, & availability filter
+│   ├── ErrorMessage.jsx       # Alert banner with optional retry
+│   ├── Loading.jsx            # Accessible loading spinner
+│   ├── Navbar.jsx             # Auth-aware top navigation & role badges
+│   └── ProtectedRoute.jsx     # Route guard for authenticated pages
 │
 ├── pages/
-│   ├── Authors.jsx         # Authors directory
-│   ├── BookDetails.jsx     # Single book details & metadata
-│   ├── Books.jsx           # Books catalog & stock filter
-│   ├── Home.jsx            # Landing hero & feature highlights
-│   ├── Login.jsx           # User sign-in with controlled inputs
-│   ├── NotFound.jsx        # 404 fallback page
-│   └── Register.jsx        # Account registration
+│   ├── Authors.jsx            # Authors directory
+│   ├── BookDetails.jsx        # Single book details, metadata & reservation action
+│   ├── Books.jsx              # Books catalog, live search, filter & direct reserve
+│   ├── Dashboard.jsx          # Member dashboard, profile, active holds & loan history
+│   ├── Home.jsx               # Landing hero & feature highlights
+│   ├── Login.jsx              # User sign-in with controlled inputs
+│   ├── NotFound.jsx           # 404 fallback page
+│   └── Register.jsx           # Account registration
 │
 ├── services/
-│   ├── api.js              # Central fetch client & error handler
-│   ├── authService.js      # Login, register, logout, getCurrentUser
-│   ├── authorService.js    # Authors list & details API calls
-│   └── bookService.js      # Book catalog & single book API calls
+│   ├── api.js                 # Central fetch client & error handler
+│   ├── authService.js         # Login, register, logout, getCurrentUser
+│   ├── authorService.js       # Authors list & details API calls
+│   ├── bookService.js         # Book catalog & search API calls
+│   ├── reservationService.js  # Create, list, & cancel book reservations
+│   └── transactionService.js  # Retrieve user loan circulation history
 │
 ├── context/
-│   └── AuthContext.jsx     # Authentication context provider & useAuth hook
+│   └── AuthContext.jsx        # Authentication context provider & useAuth hook
 │
-├── App.jsx                 # App layout, providers, and route tree
-├── index.css               # Clean responsive styling & design tokens
-└── main.jsx                # Application root with BrowserRouter
+├── App.jsx                    # App layout, providers, and route tree
+├── index.css                  # Clean responsive styling & design tokens
+└── main.jsx                   # Application root with BrowserRouter
 ```
 
 ## Available Routes
@@ -63,9 +74,10 @@ frontend/src/
 | `/` | Public | `Home` | System overview, hero presentation, and navigation |
 | `/login` | Public | `Login` | User authentication form |
 | `/register` | Public | `Register` | Member registration form |
-| `/books` | Protected | `Books` | Catalog listing with availability badges and stock filter |
-| `/books/:id` | Protected | `BookDetails` | Detailed book view, author, description, and copy counts |
+| `/books` | Protected | `Books` | Catalog listing with live search, stock filter, & hold reservations |
+| `/books/:id` | Protected | `BookDetails` | Detailed book view, author, description, & hold reservation |
 | `/authors` | Protected | `Authors` | Authors directory with biographies |
+| `/dashboard` | Protected | `Dashboard` | Member profile, active reservations, cancellation, & loan history |
 | `/404` or `*` | Public | `NotFound` | Friendly 404 page |
 
 ## Environment Configuration

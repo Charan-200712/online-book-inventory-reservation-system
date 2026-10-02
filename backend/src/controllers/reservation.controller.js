@@ -7,10 +7,10 @@ const ApiResponse = require('../utils/ApiResponse');
  * POST /api/reservations
  */
 const createReservation = asyncHandler(async (req, res) => {
-  const { book_id } = req.body;
+  const bookId = req.body.book_id || req.body.bookId;
   const reservation = await reservationService.createReservation({
     userId: req.user.userId,
-    bookId: book_id
+    bookId
   });
 
   return res.status(201).json({
