@@ -32,8 +32,8 @@ const getAllBooks = asyncHandler(async (req, res) => {
  * GET /api/books/search?q=term
  */
 const searchBooks = asyncHandler(async (req, res) => {
-  const { q } = req.query;
-  const books = await bookService.searchBooks(q);
+  const { q, available } = req.query;
+  const books = await bookService.searchBooks(q, { available });
 
   return res.status(200).json({
     success: true,

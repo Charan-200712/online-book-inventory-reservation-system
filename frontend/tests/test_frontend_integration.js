@@ -1,6 +1,6 @@
 /**
  * Frontend Integration Test Suite
- * Tests frontend services against an Express backend instance.
+ * Tests frontend services, authentication, book search, filters, and request cancellation.
  */
 
 import http from 'http';
@@ -15,7 +15,7 @@ globalThis.localStorage = {
 };
 
 // Configure environment variable for Vite
-process.env.VITE_API_BASE_URL = 'http://localhost:5005/api';
+process.env.VITE_API_BASE_URL = 'http://localhost:5006/api';
 
 async function runFrontendIntegrationTests() {
   console.log('=== RUNNING FRONTEND API INTEGRATION TEST SUITE ===\n');
@@ -28,7 +28,7 @@ async function runFrontendIntegrationTests() {
   const { bookService } = await import('../src/services/bookService.js');
   const { authorService } = await import('../src/services/authorService.js');
 
-  const PORT = 5005;
+  const PORT = 5006;
   const server = app.listen(PORT, async () => {
     let failed = false;
 
@@ -66,7 +66,7 @@ async function runFrontendIntegrationTests() {
       }
 
       // 4. Books Service: Fetch books catalog
-      console.log('\n--- 3. BOOK CATALOG & DETAILS SERVICES ---');
+      console.log('\n--- 3. BOOK CATALOG & AVAILABILITY FILTERS ---');
       const booksData = await bookService.getBooks();
       if (booksData.books && booksData.books.length > 0) {
         console.log('3a. bookService.getBooks(): PASS (Count:', booksData.books.length + ')');
@@ -74,38 +74,114 @@ async function runFrontendIntegrationTests() {
         throw new Error('No books returned from bookService.getBooks()');
       }
 
-      // 5. Books Service: Filter available books
+      // 5. Books Service: Filter available books ('true')
       const availableBooks = await bookService.getBooks({ available: 'true' });
       const allAvailable = availableBooks.books.every(b => b.available_copies > 0);
-      if (allAvailable) {
-        console.log('3b. bookService.getBooks({ available: true }): PASS (All', availableBooks.books.length, 'books have available_copies > 0)');
+      if (allAvailable && availableBooks.books.length > 0) {
+        console.log('3b. bookService.getBooks({ available: "true" }): PASS (All', availableBooks.books.length, 'books have available_copies > 0)');
       } else {
-        throw new Error('Filtered books contained books with 0 available copies');
+        throw new Error('Filtered books contained books with 0 available copies or was empty');
       }
 
-      // 6. Books Service: Fetch single book details
+      // 6. Books Service: Filter unavailable books ('false')
+      const unavailableBooks = await bookService.getBooks({ available: 'false' });
+      const allUnavailable = unavailableBooks.books.every(b => b.available_copies === 0);
+      if (allUnavailable) {
+        console.log('3c. bookService.getBooks({ available: "false" }): PASS (Count:', unavailableBooks.books.length + ')');
+      } else {
+        throw new Error('Filtered books contained books with > 0 copies');
+      }
+
+      // 7. Books Service: Fetch single book details
       const firstBook = booksData.books[0];
       const bookDetails = await bookService.getBookById(firstBook.id);
       if (bookDetails && bookDetails.id === firstBook.id && bookDetails.title) {
-        console.log('3c. bookService.getBookById(' + firstBook.id + '): PASS ("' + bookDetails.title + '")');
+        console.log('3d. bookService.getBookById(' + firstBook.id + '): PASS ("' + bookDetails.title + '")');
       } else {
         throw new Error('Failed to retrieve book details by ID');
       }
 
-      // 7. Authors Service: Fetch authors list
-      console.log('\n--- 4. AUTHORS DIRECTORY SERVICE ---');
+      // 8. Live Book Search Tests (Phase 8 Feature)
+      console.log('\n--- 4. LIVE BOOK SEARCH & COMBINED FILTERS (PHASE 8) ---');
+
+      // 8a. Search by Title
+      const titleSearch = await bookService.searchBooks('Clean');
+      if (titleSearch.books && titleSearch.books.length > 0 && titleSearch.books.some(b => b.title.includes('Clean'))) {
+        console.log('4a. Search by Title ("Clean"): PASS (Found', titleSearch.books.length, 'matches)');
+      } else {
+        throw new Error('Title search for "Clean" failed to return matches');
+      }
+
+      // 8b. Search by ISBN
+      const isbnSearch = await bookService.searchBooks('978-0132350884');
+      if (isbnSearch.books && isbnSearch.books.length === 1 && isbnSearch.books[0].isbn === '978-0132350884') {
+        console.log('4b. Search by ISBN ("978-0132350884"): PASS (Found exact match:', isbnSearch.books[0].title + ')');
+      } else {
+        throw new Error('ISBN search failed');
+      }
+
+      // 8c. Search by Author
+      const authorSearch = await bookService.searchBooks('Tanenbaum');
+      if (authorSearch.books && authorSearch.books.length > 0 && authorSearch.books.some(b => b.author_name.includes('Tanenbaum'))) {
+        console.log('4c. Search by Author ("Tanenbaum"): PASS (Found', authorSearch.books.length, 'matches)');
+      } else {
+        throw new Error('Author search for "Tanenbaum" failed');
+      }
+
+      // 8d. Search by Category
+      const categorySearch = await bookService.searchBooks('Networking');
+      if (categorySearch.books && categorySearch.books.length > 0 && categorySearch.books.some(b => b.category.includes('Networking'))) {
+        console.log('4d. Search by Category ("Networking"): PASS (Found', categorySearch.books.length, 'matches)');
+      } else {
+        throw new Error('Category search for "Networking" failed');
+      }
+
+      // 8e. Search with Nonexistent query
+      const nonExistentSearch = await bookService.searchBooks('NonExistentTermXYZ999');
+      if (nonExistentSearch.books && nonExistentSearch.books.length === 0) {
+        console.log('4e. Search No Matches: PASS (0 results returned cleanly)');
+      } else {
+        throw new Error('Nonexistent search returned unexpected results');
+      }
+
+      // 8f. Combined Search + Availability Filter
+      const combinedSearch = await bookService.searchBooks('Clean', { available: 'true' });
+      if (combinedSearch.books && combinedSearch.books.length > 0 && combinedSearch.books.every(b => b.available_copies > 0)) {
+        console.log('4f. Combined Search ("Clean") + Availability ("true"): PASS (Found', combinedSearch.books.length, 'available matches)');
+      } else {
+        throw new Error('Combined search + availability filter failed');
+      }
+
+      // 9. Request Cancellation / AbortSignal Support
+      console.log('\n--- 5. REQUEST CANCELLATION VIA ABORTCONTROLLER ---');
+      const abortController = new AbortController();
+      abortController.abort(); // Abort before execution
+      try {
+        await bookService.searchBooks('AbortTest', {}, { signal: abortController.signal });
+        console.error('FAIL: Expected aborted request to throw AbortError');
+        failed = true;
+      } catch (abortErr) {
+        if (abortErr.name === 'AbortError') {
+          console.log('5a. AbortSignal correctly cancels in-flight request: PASS (AbortError captured)');
+        } else {
+          throw abortErr;
+        }
+      }
+
+      // 10. Authors Service
+      console.log('\n--- 6. AUTHORS DIRECTORY SERVICE ---');
       const authors = await authorService.getAuthors();
       if (Array.isArray(authors) && authors.length > 0) {
-        console.log('4a. authorService.getAuthors(): PASS (Total Authors:', authors.length + ')');
+        console.log('6a. authorService.getAuthors(): PASS (Total Authors:', authors.length + ')');
       } else {
         throw new Error('Failed to retrieve authors list');
       }
 
-      // 8. Logout & Cleanup
-      console.log('\n--- 5. LOGOUT & STATE CLEARING ---');
+      // 11. Logout & Cleanup
+      console.log('\n--- 7. LOGOUT & POST-LOGOUT PROTECTION ---');
       await authService.logout();
       localStorage.removeItem('token');
-      console.log('5a. authService.logout() & localStorage cleanup: PASS');
+      console.log('7a. authService.logout() & localStorage cleanup: PASS');
 
       // Verify unauthenticated again
       try {
@@ -113,10 +189,10 @@ async function runFrontendIntegrationTests() {
         console.error('FAIL: Expected getBooks to fail after logout');
         failed = true;
       } catch (err) {
-        console.log('5b. Request after logout rejected: PASS (Status:', err.status + ')');
+        console.log('7b. Request after logout rejected: PASS (Status:', err.status + ')');
       }
 
-      console.log('\n=== ALL FRONTEND INTEGRATION TESTS PASSED (100%) ===\n');
+      console.log('\n=== ALL 14 FRONTEND INTEGRATION TESTS PASSED (100%) ===\n');
 
     } catch (testError) {
       console.error('Frontend Integration Test Failed:', testError);

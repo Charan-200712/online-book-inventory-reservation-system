@@ -9,17 +9,25 @@ Single-page React application built with Vite, React Router, React Hooks, and Co
 - **Authentication State**: Global `AuthContext` tracking user identity, token, authentication status, and session hydration from `localStorage` via `/api/auth/me`.
 - **Protected Routes**: `ProtectedRoute` wrapper guarding pages against unauthenticated access and redirecting to `/login` with location preservation.
 - **Controlled Forms**: `Login` and `Register` forms with client-side validation, password confirmation, disabled states, and clean error banners.
+- **Live Book Search & Debounce (Phase 8)**:
+  - Real-time search across Title, ISBN, Author, and Category via `GET /api/books/search?q=...`.
+  - 400ms debounce interval preventing keystroke query spam.
+  - Stale query protection via `AbortController` cancellation cleanup in `useEffect`.
+  - One-click clear search action with immediate reset.
+- **Combined Availability Filtering (Phase 8)**:
+  - Controlled availability selection: All Books, Available Only (`available_copies > 0`), Unavailable Only (`available_copies = 0`).
+  - Seamlessly combines search terms with stock status (e.g. `/api/books/search?q=Clean&available=true`).
 - **Catalog & Details**:
-  - Book catalog with availability badge indicators and stock filtering (`/books`).
+  - Book catalog with availability badge indicators and live result count feedback (`/books`).
   - Book details view displaying inventory metrics and volume descriptions (`/books/:id`).
   - Authors directory (`/authors`).
-- **Phase 8 Search Slot**: Prepared placeholder container on Books page for live search integration.
 
 ## Directory Structure
 
 ```text
 frontend/src/
 ├── components/
+│   ├── BookSearch.jsx      # Controlled search bar, clear button, & availability filter
 │   ├── ErrorMessage.jsx    # Alert banner with optional retry
 │   ├── Loading.jsx         # Accessible loading spinner
 │   ├── Navbar.jsx          # Auth-aware top navigation & role badges

@@ -168,12 +168,19 @@ async function getAllBooks({ available, page, limit } = {}) {
  * @param {string} searchQuery
  * @returns {Promise<Array>} Matching books
  */
-async function searchBooks(searchQuery) {
+async function searchBooks(searchQuery, { available } = {}) {
   if (!searchQuery || typeof searchQuery !== 'string' || !searchQuery.trim()) {
     return [];
   }
 
   const term = `%${searchQuery.trim()}%`;
+
+  let whereAvailability = '';
+  if (available === 'true') {
+    whereAvailability = ' AND b.available_copies > 0';
+  } else if (available === 'false') {
+    whereAvailability = ' AND b.available_copies = 0';
+  }
 
   const query = `
     SELECT
@@ -192,10 +199,13 @@ async function searchBooks(searchQuery) {
     LEFT JOIN authors a
         ON b.author_id = a.id
     WHERE
-        b.title LIKE ?
-        OR b.isbn LIKE ?
-        OR a.name LIKE ?
-        OR b.category LIKE ?
+        (
+          b.title LIKE ?
+          OR b.isbn LIKE ?
+          OR a.name LIKE ?
+          OR b.category LIKE ?
+        )
+        ${whereAvailability}
     ORDER BY b.title ASC;
   `;
 

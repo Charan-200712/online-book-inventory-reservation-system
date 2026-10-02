@@ -78,6 +78,9 @@ export async function apiRequest(endpoint, options = {}) {
 
     return data;
   } catch (error) {
+    if (error.name === 'AbortError') {
+      throw error;
+    }
     if (error instanceof ApiError) {
       throw error;
     }
