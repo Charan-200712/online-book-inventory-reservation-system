@@ -5,7 +5,11 @@ Single-page React application built with Vite, React Router, React Hooks, and Co
 ## Features
 
 - **React Routing**: Centralized routing using React Router v6.
-- **Centralized API Client**: Custom fetch-based HTTP layer in `src/services/api.js` handling `Authorization: Bearer <token>` injection, JSON serialization, and error normalization.
+- **Centralized API Client**: Custom fetch-based HTTP layer in `src/services/api.js` handling:
+  - `Authorization: Bearer <token>` automatic injection.
+  - JSON serialization & deserialization.
+  - Network failure translation into user-friendly message (`Unable to connect to the server. Please check that the backend is running and try again.`) without exposing raw `TypeError: Failed to fetch`.
+  - Mid-flight JWT expiration event dispatch (`auth:unauthorized`) for seamless session reset without infinite redirect loops.
 - **Authentication State**: Global `AuthContext` tracking user identity, token, authentication status, and session hydration from `localStorage` via `/api/auth/me`.
 - **Role-Based Protected Routes**:
   - `ProtectedRoute` wrapper guarding pages against unauthenticated access (redirecting to `/login` with location state).
@@ -30,7 +34,13 @@ Single-page React application built with Vite, React Router, React Hooks, and Co
   - **Circulation Transactions Audit**:
     - Full circulation ledger with Borrower Info, Due Dates, and Return Dates.
     - Visual status badges with immediate highlight for `OVERDUE` loans.
-- **Controlled Forms**: `Login`, `Register`, `AdminBookForm`, and `AdminAuthorForm` with client-side validation, password confirmation, disabled states, and clean error banners.
+- **Error Handling, Validation & UX Hardening (Phase 11)**:
+  - Client-side validation across all forms (`Login`, `Register`, `AdminBookForm`, `AdminAuthorForm`).
+  - Active submission states with disabled buttons (`Signing in...`, `Creating Account...`, `Saving Book...`, `Saving Author...`, `Reserving Copy...`, `Cancelling...`).
+  - Form state preservation during validation or API errors to avoid re-typing.
+  - Graceful empty states with helpful iconography and navigation call-to-actions across all views.
+  - Reliable author name display on `BookDetails` resolving both nested and flat author associations.
+  - Clean error banners with integrated `Try Again` retry handlers.
 - **Live Book Search & Debounce (Phase 8)**:
   - Real-time search across Title, ISBN, Author, and Category via `GET /api/books/search?q=...`.
   - 400ms debounce interval preventing keystroke query spam.
@@ -78,7 +88,7 @@ frontend/src/
 │
 ├── services/
 │   ├── adminService.js        # Admin CRUD for books, authors, holds & transactions
-│   ├── api.js                 # Central fetch client & error handler
+│   ├── api.js                 # Central fetch client, error handler, & network failure translation
 │   ├── authService.js         # Login, register, logout, getCurrentUser
 │   ├── authorService.js       # Authors list & details API calls
 │   ├── bookService.js         # Book catalog & search API calls
@@ -86,7 +96,7 @@ frontend/src/
 │   └── transactionService.js  # Retrieve user loan circulation history
 │
 ├── context/
-│   └── AuthContext.jsx        # Authentication context provider & useAuth hook
+│   └── AuthContext.jsx        # Authentication context provider, useAuth hook & session expiry handler
 │
 ├── App.jsx                    # App layout, providers, and route tree
 ├── index.css                  # Responsive design tokens, admin dashboard & modal styles
@@ -134,4 +144,4 @@ npm run build
 ```bash
 npm test
 ```
-Runs the automated 32-test frontend integration suite covering authentication, role gates, search, filters, user dashboard, admin catalog CRUD, hold approvals, and circulation queries.
+Runs the automated 37-test frontend integration suite covering authentication, role gates, search, filters, user dashboard, admin catalog CRUD, hold approvals, circulation queries, network error translation, and parameter validation.

@@ -27,7 +27,7 @@ A departmental library requires a web application to manage book stocks, search 
 * VS Code
 
 ## Current Phase
-Phase 10 — Admin Dashboard & Management UI (Complete)
+Phase 11 — Error Handling, Validation & UX Hardening (Complete)
 
 ## Implemented & Planned Features
 * [x] Project architecture & Express setup (Phase 1)
@@ -41,6 +41,7 @@ Phase 10 — Admin Dashboard & Management UI (Complete)
 * [x] Live book search, controlled forms & useEffect synchronization (Phase 8)
 * [x] User dashboard, book reservations, self-cancellation & circulation history (Phase 9)
 * [x] Administrator dashboard & catalog/circulation management UI (Phase 10)
+* [x] Error handling, validation, sanitization & UX hardening (Phase 11)
 
 ## Project Structure
 ```text
@@ -56,6 +57,10 @@ Phase 10 — Admin Dashboard & Management UI (Complete)
 │   │   ├── app.js
 │   │   └── server.js
 │   ├── tests/
+│   │   ├── test_auth.js
+│   │   ├── test_authors_books.js
+│   │   ├── test_reservations_transactions.js
+│   │   └── test_error_handling_validation.js
 │   ├── .env.example
 │   ├── package.json
 │   └── README.md
@@ -70,6 +75,7 @@ Phase 10 — Admin Dashboard & Management UI (Complete)
 │   │   ├── index.css
 │   │   └── main.jsx
 │   ├── tests/
+│   │   └── test_frontend_integration.js
 │   ├── public/
 │   ├── index.html
 │   ├── package.json
@@ -108,12 +114,12 @@ npm run dev
 Default URL: `http://localhost:5173`
 
 ### Running Automated Test Suites
-- **Backend Tests**:
+- **Backend Tests (63 regression + Phase 11 validation tests)**:
   ```bash
   cd backend
   npm test
   ```
-- **Frontend Integration Tests**:
+- **Frontend Integration Tests (37 comprehensive integration tests)**:
   ```bash
   cd frontend
   npm test

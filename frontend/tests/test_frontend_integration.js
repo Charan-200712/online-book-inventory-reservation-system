@@ -24,7 +24,7 @@ async function runFrontendIntegrationTests() {
   // Dynamic import of backend app and services
   const { default: app } = await import('../../backend/src/app.js');
   const { default: db } = await import('../../backend/src/config/db.js');
-  const { default: api } = await import('../src/services/api.js');
+  const { default: api, ApiError, apiRequest } = await import('../src/services/api.js');
   const { authService } = await import('../src/services/authService.js');
   const { bookService } = await import('../src/services/bookService.js');
   const { authorService } = await import('../src/services/authorService.js');
@@ -446,7 +446,77 @@ async function runFrontendIntegrationTests() {
         console.log('10b. Request after logout rejected: PASS (Status:', err.status + ')');
       }
 
-      console.log('\n=== ALL 32 FRONTEND INTEGRATION TESTS PASSED (100%) ===\n');
+      // --- 11. ERROR HANDLING, VALIDATION & NETWORK FAILURES (PHASE 11) ---
+      console.log('\n--- 11. ERROR HANDLING, VALIDATION & NETWORK FAILURES (PHASE 11) ---');
+
+      // 11a. Network error translation (server down or unreachable host)
+      try {
+        await apiRequest('http://127.0.0.1:59998/api/test-network-down');
+        console.error('FAIL: Expected network error to throw');
+        failed = true;
+      } catch (netErr) {
+        if (
+          netErr.status === 0 &&
+          netErr.message.includes('Unable to connect to the server')
+        ) {
+          console.log('11a. Network failure translation: PASS (Status: 0 - ' + netErr.message + ')');
+        } else {
+          throw netErr;
+        }
+      }
+
+      // Re-login as user to test authenticated error responses
+      const reLogin = await authService.login({
+        email: 'rahul.sharma@college.edu',
+        password: 'Student@123',
+      });
+      localStorage.setItem('token', reLogin.token);
+
+      // 11b. Parameter Validation: Invalid non-numeric book ID -> 400
+      try {
+        await bookService.getBookById('invalid-book-id');
+        console.error('FAIL: Expected invalid ID to throw 400');
+        failed = true;
+      } catch (badIdErr) {
+        if (badIdErr.status === 400 && badIdErr.message.includes('Invalid book ID')) {
+          console.log('11b. Invalid ID parameter rejected: PASS (Status: 400 - ' + badIdErr.message + ')');
+        } else {
+          throw badIdErr;
+        }
+      }
+
+      // 11c. Not Found Handling: 404 for non-existent book
+      try {
+        await bookService.getBookById(999999);
+        console.error('FAIL: Expected non-existent book to return 404');
+        failed = true;
+      } catch (notFoundErr) {
+        if (notFoundErr.status === 404 && notFoundErr.message.includes('Book not found')) {
+          console.log('11c. Non-existent resource returns 404: PASS (Status: 404 - ' + notFoundErr.message + ')');
+        } else {
+          throw notFoundErr;
+        }
+      }
+
+      // 11d. Client-side Form Validation Check: Login missing password -> 400
+      try {
+        await authService.login({ email: 'rahul.sharma@college.edu' });
+        console.error('FAIL: Expected login without password to return 400');
+        failed = true;
+      } catch (loginValErr) {
+        if (loginValErr.status === 400 && loginValErr.message.includes('Password is required')) {
+          console.log('11d. Form input validation rejected at API: PASS (Status: 400 - ' + loginValErr.message + ')');
+        } else {
+          throw loginValErr;
+        }
+      }
+
+      // 11e. Final Logout
+      await authService.logout();
+      localStorage.removeItem('token');
+      console.log('11e. Post-test cleanup and logout: PASS');
+
+      console.log('\n=== ALL 37 FRONTEND INTEGRATION TESTS PASSED (100%) ===\n');
 
     } catch (testError) {
       console.error('Frontend Integration Test Failed:', testError);

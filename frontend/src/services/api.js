@@ -1,6 +1,7 @@
 /**
  * Centralized API Client
- * Manages HTTP communication, headers, JWT authorization, and error extraction.
+ * Manages HTTP communication, headers, JWT authorization, network error translation,
+ * and session expiration events.
  */
 
 const getBaseUrl = () => {
@@ -30,15 +31,18 @@ export class ApiError extends Error {
  * @param {object} options - Fetch options (method, headers, body, etc.)
  */
 export async function apiRequest(endpoint, options = {}) {
-  const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-  
+  const isAbsoluteUrl = endpoint.startsWith('http://') || endpoint.startsWith('https://');
+  const url = isAbsoluteUrl
+    ? endpoint
+    : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+
   const headers = {
     'Accept': 'application/json',
     ...options.headers,
   };
 
   // Attach stored JWT if available and not explicitly provided
-  const token = localStorage.getItem('token');
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
   if (token && !headers['Authorization']) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -67,11 +71,33 @@ export async function apiRequest(endpoint, options = {}) {
     }
 
     if (!response.ok) {
-      const message =
+      // Handle JWT expiration / invalid session mid-flight
+      if (response.status === 401 && token) {
+        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        }
+      }
+
+      let message =
         data?.message ||
         data?.errors?.[0]?.msg ||
-        data?.error ||
-        `HTTP Error ${response.status}: ${response.statusText}`;
+        data?.error;
+
+      if (!message) {
+        if (response.status === 401) {
+          message = 'Authentication required. Please sign in to continue.';
+        } else if (response.status === 403) {
+          message = 'You are not authorized to perform this action.';
+        } else if (response.status === 404) {
+          message = 'The requested resource was not found.';
+        } else if (response.status === 409) {
+          message = 'A business conflict occurred with this request.';
+        } else if (response.status >= 500) {
+          message = 'A server error occurred. Please try again later.';
+        } else {
+          message = `HTTP Error ${response.status}: ${response.statusText}`;
+        }
+      }
 
       throw new ApiError(message, response.status, data);
     }
@@ -84,12 +110,22 @@ export async function apiRequest(endpoint, options = {}) {
     if (error instanceof ApiError) {
       throw error;
     }
-    // Network or other unforeseen errors
-    throw new ApiError(
-      error.message || 'Unable to connect to the server. Please check your network or try again.',
-      0,
-      null
-    );
+
+    // Network failures (server down, connection refused, offline)
+    const isNetworkError =
+      error instanceof TypeError ||
+      (error.message && (
+        error.message.includes('fetch') ||
+        error.message.includes('NetworkError') ||
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('ECONNREFUSED')
+      ));
+
+    const friendlyMessage = isNetworkError
+      ? 'Unable to connect to the server. Please check that the backend is running and try again.'
+      : (error.message || 'An unexpected error occurred. Please try again.');
+
+    throw new ApiError(friendlyMessage, 0, null);
   }
 }
 

@@ -80,7 +80,7 @@ function BookDetails() {
               <span className="category-pill">{book.category || 'General'}</span>
               <h1 className="details-title">{book.title}</h1>
               <p className="details-author">
-                Authored by <strong>{book.author_name || 'Unknown Author'}</strong>
+                Authored by <strong>{book.author?.name || book.author_name || 'Unknown Author'}</strong>
               </p>
             </div>
             <div className="details-status-badge">

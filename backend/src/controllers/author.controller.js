@@ -1,6 +1,7 @@
 const authorService = require('../services/author.service');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiResponse = require('../utils/ApiResponse');
+const ApiError = require('../utils/ApiError');
 
 /**
  * Controller: Create author (Admin only)
@@ -33,7 +34,12 @@ const getAllAuthors = asyncHandler(async (req, res) => {
  * GET /api/authors/:id
  */
 const getAuthorById = asyncHandler(async (req, res) => {
-  const author = await authorService.getAuthorById(req.params.id);
+  const authorId = parseInt(req.params.id, 10);
+  if (isNaN(authorId) || authorId <= 0) {
+    throw ApiError.badRequest('Invalid author ID. Must be a positive integer.');
+  }
+
+  const author = await authorService.getAuthorById(authorId);
   return res.status(200).json({
     success: true,
     author
@@ -45,7 +51,12 @@ const getAuthorById = asyncHandler(async (req, res) => {
  * PUT /api/authors/:id
  */
 const updateAuthor = asyncHandler(async (req, res) => {
-  const author = await authorService.updateAuthor(req.params.id, req.body);
+  const authorId = parseInt(req.params.id, 10);
+  if (isNaN(authorId) || authorId <= 0) {
+    throw ApiError.badRequest('Invalid author ID. Must be a positive integer.');
+  }
+
+  const author = await authorService.updateAuthor(authorId, req.body);
   return res.status(200).json({
     success: true,
     message: 'Author updated successfully',
@@ -58,7 +69,12 @@ const updateAuthor = asyncHandler(async (req, res) => {
  * DELETE /api/authors/:id
  */
 const deleteAuthor = asyncHandler(async (req, res) => {
-  const result = await authorService.deleteAuthor(req.params.id);
+  const authorId = parseInt(req.params.id, 10);
+  if (isNaN(authorId) || authorId <= 0) {
+    throw ApiError.badRequest('Invalid author ID. Must be a positive integer.');
+  }
+
+  const result = await authorService.deleteAuthor(authorId);
   return ApiResponse.success(res, result.message);
 });
 

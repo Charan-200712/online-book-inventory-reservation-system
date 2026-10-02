@@ -1,6 +1,7 @@
 const transactionService = require('../services/transaction.service');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiResponse = require('../utils/ApiResponse');
+const ApiError = require('../utils/ApiError');
 
 /**
  * Controller: Issue book (Admin only)
@@ -8,10 +9,28 @@ const ApiResponse = require('../utils/ApiResponse');
  */
 const issueBook = asyncHandler(async (req, res) => {
   const { reservation_id, book_id, user_id } = req.body;
+
+  const reservationId = reservation_id ? parseInt(reservation_id, 10) : null;
+  const bookId = book_id ? parseInt(book_id, 10) : null;
+  const userId = user_id ? parseInt(user_id, 10) : null;
+
+  if (reservation_id && (isNaN(reservationId) || reservationId <= 0)) {
+    throw ApiError.badRequest('Invalid reservation_id. Must be a positive integer.');
+  }
+
+  if (!reservation_id) {
+    if (!bookId || isNaN(bookId) || bookId <= 0) {
+      throw ApiError.badRequest('Valid book_id is required for direct issue.');
+    }
+    if (!userId || isNaN(userId) || userId <= 0) {
+      throw ApiError.badRequest('Valid user_id is required for direct issue.');
+    }
+  }
+
   const transaction = await transactionService.issueBook({
-    reservationId: reservation_id,
-    bookId: book_id,
-    userId: user_id
+    reservationId,
+    bookId,
+    userId
   });
 
   return res.status(201).json({
@@ -26,7 +45,12 @@ const issueBook = asyncHandler(async (req, res) => {
  * POST /api/transactions/:id/return
  */
 const returnBook = asyncHandler(async (req, res) => {
-  const result = await transactionService.returnBook(req.params.id);
+  const transactionId = parseInt(req.params.id, 10);
+  if (isNaN(transactionId) || transactionId <= 0) {
+    throw ApiError.badRequest('Invalid transaction ID. Must be a positive integer.');
+  }
+
+  const result = await transactionService.returnBook(transactionId);
 
   return res.status(200).json({
     success: true,

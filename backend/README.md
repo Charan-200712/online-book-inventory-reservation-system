@@ -23,17 +23,18 @@ Database Layer (MySQL Pool via backend/src/config/db.js)
 backend/
 ├── src/
 │   ├── config/
-│   │   └── db.js                 # MySQL2 connection pool & test helper
+│   │   ├── db.js                 # MySQL2 connection pool & test helper
+│   │   └── seed.js               # Database seed script
 │   ├── controllers/
 │   │   ├── auth.controller.js        # Authentication & user profile handlers
-│   │   ├── author.controller.js      # Author management handlers
-│   │   ├── book.controller.js        # Book search & management handlers
+│   │   ├── author.controller.js      # Author management handlers (with ID validation)
+│   │   ├── book.controller.js        # Book search & management handlers (with ID validation)
 │   │   ├── health.controller.js      # Health check handler
-│   │   ├── reservation.controller.js # Reservation lifecycle handlers
-│   │   └── transaction.controller.js # Circulation & loan transaction handlers
+│   │   ├── reservation.controller.js # Reservation lifecycle handlers (with ID validation)
+│   │   └── transaction.controller.js # Circulation & loan transaction handlers (with ID validation)
 │   ├── middleware/
 │   │   ├── authMiddleware.js         # JWT Bearer token authentication
-│   │   ├── errorMiddleware.js        # Centralized error handler (400, 401, 403, 404, 409, 500)
+│   │   ├── errorMiddleware.js        # Centralized error handler & MySQL error translator
 │   │   ├── loggerMiddleware.js       # Request logging middleware
 │   │   ├── notFoundMiddleware.js     # 404 Not Found route handler
 │   │   ├── roleMiddleware.js         # Role-based authorization (USER, ADMIN)
@@ -60,10 +61,45 @@ backend/
 │   │   └── jwt.js                    # JWT sign and verify helper functions
 │   ├── app.js                        # Express app configuration & middlewares
 │   └── server.js                     # HTTP listener & database connection check
+├── tests/
+│   ├── test_auth.js                          # Phase 4 Auth test suite
+│   ├── test_authors_books.js                 # Phase 5 Catalog test suite
+│   ├── test_reservations_transactions.js     # Phase 6 Concurrency & transactions suite
+│   └── test_error_handling_validation.js     # Phase 11 Error handling & validation suite
 ├── .env.example
 ├── package.json
 └── README.md
 ```
+
+## Standardized API Error Format
+
+All error responses across the backend conform to a standardized JSON schema:
+
+```json
+{
+  "success": false,
+  "message": "Human readable error description"
+}
+```
+
+### HTTP Status Code Conventions
+- `200 OK`: Successful retrieval or update.
+- `201 Created`: Successful creation of a new resource (book, author, reservation, loan).
+- `400 Bad Request`: Validation failure, invalid IDs (non-numeric, negative), malformed JSON.
+- `401 Unauthorized`: Missing, invalid, or expired JWT.
+- `403 Forbidden`: Authenticated user lacking required privileges (e.g. `USER` on admin endpoints).
+- `404 Not Found`: Resource or route not found.
+- `409 Conflict`: Business logic violation (duplicate email, duplicate ISBN, referential constraint, already approved/cancelled hold).
+- `500 Internal Server Error`: Unexpected system fault or database connection outage.
+
+### Error Translation & Sanitization
+The centralized error middleware (`errorMiddleware.js`) intercepts and sanitizes errors before sending responses:
+1. **MySQL Duplicate Entry (1062 / `ER_DUP_ENTRY`)**: Automatically mapped to `409 Conflict` with human-readable messaging for emails or ISBNs.
+2. **Foreign Key Reference Constraint (1451 / `ER_ROW_IS_REFERENCED_2`)**: Mapped to `409 Conflict` protecting referential integrity.
+3. **Foreign Key Missing Constraint (1452 / `ER_NO_REFERENCED_ROW_2`)**: Mapped to `400 Bad Request`.
+4. **Database Connection Loss**: Mapped to `500` with `"Database service is currently unavailable. Please try again later."`
+5. **Malformed JSON Syntax**: Mapped to `400 Bad Request` with `"Malformed JSON syntax in request body"`.
+6. **Zero Leakage**: Internal SQL statements, credentials, stack traces, and database table names are never leaked to the client.
 
 ## Available Endpoints
 
@@ -98,34 +134,16 @@ backend/
 | `POST` | `/api/transactions/:id/return` | Admin Only | Return issued book (records return date, increments inventory, updates overdue) |
 | `GET` | `/api/transactions` | Authenticated | Get current user's borrowing history |
 | `GET` | `/api/transactions/all` | Admin Only | Get all borrowing transactions |
-| `GET` | `/api/transactions/overdue` | Admin Only | Get all overdue loans |
+| `GET` | `/api/transactions/overdue` | Admin Only | Get all overdue transactions |
 
-## Concurrency & Inventory Safety Rules
+## Running the Automated Test Suite
 
-1. **Reservation Hold**: Placing a reservation (`POST /api/reservations`) initiates a database transaction and acquires an exclusive row lock (`SELECT ... FOR UPDATE`) on the book. If `available_copies > 0`, it decrements `available_copies` by 1 and records the reservation with `PENDING` status. If no copies are available, the transaction rolls back with a `400 Bad Request`.
-2. **Issue with Reservation**: When issuing a book associated with an active reservation, the system completes the reservation (`COMPLETED`) and creates an `ISSUED` transaction. Because the reservation already decremented the inventory upon hold, the book inventory is NOT decremented again, preventing duplicate deductions.
-3. **Direct Checkout**: When an admin directly issues a book without prior reservation, the system locks the book row and decrements `available_copies` inside the transaction.
-4. **Cancellation & Return**: Cancelling a reservation or returning an issued book increments `available_copies` inside a transaction up to `total_copies`. Invariant constraints `0 <= available_copies <= total_copies` are strictly enforced.
-
-## Setup Instructions
-
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Configure environment:
-   Copy `.env.example` to `.env` and configure variables:
-   ```bash
-   cp .env.example .env
-   ```
-
-3. Start server:
-   - Development (with auto-reload):
-     ```bash
-     npm run dev
-     ```
-   - Production:
-     ```bash
-     npm start
-     ```
+```bash
+cd backend
+npm test
+```
+Executes all 4 suites:
+1. `test_auth.js` (Phase 4 Authentication & Role Verification)
+2. `test_authors_books.js` (Phase 5 Books, Authors, & Availability Filter)
+3. `test_reservations_transactions.js` (Phase 6 Concurrency, Transactions & Row-Locks)
+4. `test_error_handling_validation.js` (Phase 11 Error Translation, ID Validation, & Sanitization)

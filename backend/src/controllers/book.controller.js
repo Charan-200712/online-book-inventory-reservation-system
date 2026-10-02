@@ -1,6 +1,7 @@
 const bookService = require('../services/book.service');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiResponse = require('../utils/ApiResponse');
+const ApiError = require('../utils/ApiError');
 
 /**
  * Controller: Backward-compatible LEFT JOIN demonstration
@@ -48,8 +49,12 @@ const searchBooks = asyncHandler(async (req, res) => {
  * GET /api/books/:id
  */
 const getBookById = asyncHandler(async (req, res) => {
-  const book = await bookService.getBookById(req.params.id);
+  const bookId = parseInt(req.params.id, 10);
+  if (isNaN(bookId) || bookId <= 0) {
+    throw ApiError.badRequest('Invalid book ID. Must be a positive integer.');
+  }
 
+  const book = await bookService.getBookById(bookId);
   return res.status(200).json({
     success: true,
     book
@@ -75,8 +80,12 @@ const createBook = asyncHandler(async (req, res) => {
  * PUT /api/books/:id
  */
 const updateBook = asyncHandler(async (req, res) => {
-  const book = await bookService.updateBook(req.params.id, req.body);
+  const bookId = parseInt(req.params.id, 10);
+  if (isNaN(bookId) || bookId <= 0) {
+    throw ApiError.badRequest('Invalid book ID. Must be a positive integer.');
+  }
 
+  const book = await bookService.updateBook(bookId, req.body);
   return res.status(200).json({
     success: true,
     message: 'Book updated successfully',
@@ -89,7 +98,12 @@ const updateBook = asyncHandler(async (req, res) => {
  * DELETE /api/books/:id
  */
 const deleteBook = asyncHandler(async (req, res) => {
-  const result = await bookService.deleteBook(req.params.id);
+  const bookId = parseInt(req.params.id, 10);
+  if (isNaN(bookId) || bookId <= 0) {
+    throw ApiError.badRequest('Invalid book ID. Must be a positive integer.');
+  }
+
+  const result = await bookService.deleteBook(bookId);
   return ApiResponse.success(res, result.message);
 });
 
