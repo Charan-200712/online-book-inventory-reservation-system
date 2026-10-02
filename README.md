@@ -27,18 +27,17 @@ A departmental library requires a web application to manage book stocks, search 
 * VS Code
 
 ## Current Phase
-Phase 1 — Project Initialization & Architecture
+Phase 5 — Book & Author Management APIs
 
-## Planned Features
-* User authentication
-* Book management
-* Author management
-* Live book search
-* Inventory management
-* Book reservations
-* Issue and return tracking
-* Transaction history
-* Admin dashboard
+## Implemented & Planned Features
+* [x] Project architecture & Express setup (Phase 1)
+* [x] MySQL relational schema & seed data (Phase 2)
+* [x] Express backend foundation & connection pool (Phase 3)
+* [x] User authentication & JWT authorization (Phase 4)
+* [x] Book & author management APIs with live search & inventory rules (Phase 5)
+* [ ] Book reservations & hold queues (Phase 6)
+* [ ] Issue and return tracking & circulation transactions (Phase 7)
+* [ ] React frontend catalog, search & admin dashboard (Phase 8+)
 
 ## Project Structure
 ```text

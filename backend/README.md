@@ -70,11 +70,20 @@ backend/
 | `POST` | `/api/auth/logout` | Public | Stateless logout response for client-side token discard |
 | `GET` | `/api/auth/me` | Authenticated | Retrieve authenticated user profile |
 | `GET` | `/api/auth/admin-test` | Admin Only | Protected test endpoint verifying `ADMIN` role authorization |
-| `GET` | `/api/books/sample-left-join` | Public | Demonstrates relational LEFT JOIN query |
-| `ALL` | `/api/books/*` | - | Book routes placeholder (Phase 5) |
-| `ALL` | `/api/authors/*` | - | Author routes placeholder (Phase 6) |
-| `ALL` | `/api/reservations/*` | - | Reservation routes placeholder (Phase 7) |
-| `ALL` | `/api/transactions/*` | - | Transaction routes placeholder (Phase 8) |
+| `GET` | `/api/authors` | Authenticated | Get all authors sorted alphabetically |
+| `GET` | `/api/authors/:id` | Authenticated | Get author by ID with their associated books |
+| `POST` | `/api/authors` | Admin Only | Create a new author |
+| `PUT` | `/api/authors/:id` | Admin Only | Update an author's name and/or biography |
+| `DELETE` | `/api/authors/:id` | Admin Only | Delete author (rejected if books reference author) |
+| `GET` | `/api/books` | Authenticated | Get all books with author names (LEFT JOIN), pagination, and availability filter |
+| `GET` | `/api/books/search?q=...` | Authenticated | Live search across title, ISBN, author name, and category |
+| `GET` | `/api/books/:id` | Authenticated | Get book by ID with detailed author and availability data |
+| `POST` | `/api/books` | Admin Only | Create a new book (validates author exists and ISBN uniqueness) |
+| `PUT` | `/api/books/:id` | Admin Only | Update book metadata and adjust inventory safely |
+| `DELETE` | `/api/books/:id` | Admin Only | Delete book (rejected if referenced in history/reservations) |
+| `GET` | `/api/books/sample-left-join` | Public | Phase 2/3/4 backwards-compatible LEFT JOIN demo |
+| `ALL` | `/api/reservations/*` | - | Reservation routes placeholder (Phase 6) |
+| `ALL` | `/api/transactions/*` | - | Transaction routes placeholder (Phase 7) |
 
 ## Setup Instructions
 
