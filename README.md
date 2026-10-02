@@ -148,6 +148,7 @@ FSD_PROJECT/
 ├── .gitignore                       # Production gitignore (dependencies, build, env)
 ├── LICENSE                          # Standard ISC License
 ├── package.json                     # Root orchestrator scripts
+├── render.yaml                      # Render Blueprint full-stack deployment specification
 ├── README.md                        # Primary project documentation
 ├── database/
 │   ├── schema.sql                   # MySQL DDL schema with constraints & indexes
@@ -157,6 +158,7 @@ FSD_PROJECT/
 │   ├── README.md                    # Documentation index
 │   ├── final-package-guide.md       # Final submission package & setup runbook
 │   ├── final-submission-status.md   # Official project submission status report
+│   ├── production-verification.md   # Live deployment verification protocol & record
 │   ├── final-presentation.md        # 18-slide academic presentation deck & speaker notes
 │   ├── presentation-demo-flow.md    # 18-step live examination demonstration sequence
 │   ├── viva-quick-revision.md       # One-page rapid revision sheet (21 full-stack concepts)

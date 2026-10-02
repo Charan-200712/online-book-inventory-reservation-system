@@ -95,6 +95,7 @@ For specific evaluation tasks, refer to the corresponding documents in the [`doc
 | **Formal College Report**| [`docs/final-project-report.md`](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/final-project-report.md) | Formal 25-section college project report covering architecture, DDL, and modules. |
 | **Testing & Quality** | [`docs/testing.md`](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/testing.md) | Detailed test strategy, 8 test suites, 192+ verifications, and regression logs. |
 | **Production Deployment**| [`docs/deployment.md`](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/deployment.md) | Production readiness guide, Nginx reverse proxy configuration, and PM2 process setup. |
+| **Production Verification**| [`docs/production-verification.md`](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/production-verification.md) | Live cloud verification protocol, environment table, and smoke test workflows. |
 | **API Quick Reference** | [`docs/api-quick-reference.md`](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/api-quick-reference.md) | Directory of all RESTful HTTP endpoints, query parameters, and status codes. |
 | **Screenshot Catalog** | [`docs/screenshot-checklist.md`](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/screenshot-checklist.md) | 33-point screenshot guide and slide-by-slide image mapping. |
 

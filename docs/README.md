@@ -43,6 +43,8 @@ This directory contains the complete technical documentation, project reports, v
   *Formal release audit and code freeze sign-off across environment safety, database integrity, 192+ automated tests, build artifacts, and release readiness.*
 
 ### 4. Operations, Testing & Version Control
+* [Production Verification Protocol](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/production-verification.md)  
+  *Live cloud deployment verification protocol, health check procedures, test workflows, and environmental reference.*
 * [Testing & Quality Assurance Guide](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/testing.md)  
   *Complete testing strategy, breakdown of all 8 automated test suites (192+ verifications), regression test logs, and build results.*
 * [Deployment Guide & Readiness Specification](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/deployment.md)  
