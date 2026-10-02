@@ -76,3 +76,31 @@ This checklist provides a structured guide of the recommended screenshots to cap
 - **Dimensions**: Crop screenshots cleanly around the browser window or terminal box (avoid taskbars and unneeded background clutter).
 - **Figure Captions**: Label each screenshot clearly in the report (e.g., *Figure 4.6: Live Debounced Search Filter by Book Category*).
 - **Annotations**: Use red boxes or callout arrows to guide the examiner's eye to key features (such as stock numbers, status badges, or validation alerts).
+
+---
+
+## Recommended Presentation Slide Mapping (18-Slide Deck)
+
+The following mapping links the 33 captured screenshots directly to the 18 presentation slides defined in [`docs/final-presentation.md`](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/final-presentation.md):
+
+| Slide Number & Topic | Recommended Screenshot(s) / Figures | Purpose in Slide Presentation |
+|---|---|---|
+| **Slide 1 — Title** | *None* | Professional title and candidate credentials only. |
+| **Slide 2 — Introduction** | **01** (Landing / Home Page) | Illustrates the modern public entry point for patrons. |
+| **Slide 3 — Problem Statement** | *Conceptual Graphic / Pain Points Diagram* | Highlights manual register drawbacks, double-booking, and lost stock. |
+| **Slide 4 — Objectives** | *None / Objective Checklist* | Clear academic deliverables. |
+| **Slide 5 — Existing System** | *Comparison Table Graphic* | Side-by-side contrast of manual vs. digital library systems. |
+| **Slide 6 — Proposed System Architecture** | *Mermaid Architecture Diagram* | Visualizes React SPA → Express API → MySQL Database flow. |
+| **Slide 7 — Technology Stack** | *Technology Badge Grid* | React, Vite, Node, Express, MySQL, JWT, bcrypt. |
+| **Slide 8 — System Architecture & Layering** | *Code Directory & Layering Diagram* | Demonstrates Routes → Controllers → Services → DB Pool separation. |
+| **Slide 9 — Database Design (Schema)** | **30** (MySQL Tables & Schema) & *Mermaid ER Diagram* | Displays the 5 relational tables, cardinality, and check constraints. |
+| **Slide 10 — Authentication & Authorization** | **04** (Patron Login) & **05** (Post-Login Role Badge) | Proves bcrypt password verification and JWT role enforcement. |
+| **Slide 11 — Book & Author Management** | **19** (Admin Book Console) & **21** (Admin Author Console) | Demonstrates administrative CRUD operations and referential integrity. |
+| **Slide 12 — Real-Time Search & Availability**| **07** (Live Search Keyword) & **09** (Availability Filter) | Demonstrates real-time debounced search and one-click stock filtering. |
+| **Slide 13 — Reservation Lifecycle** | **11** (Book Details) & **13** (Reservation Success Banner) | Illustrates patron book hold creation and pending status. |
+| **Slide 14 — Circulation & Inventory (ACID)** | **24** (Issue Modal) & **25** (Circulation Ledger & Returns) | Demonstrates 14-day loan calculation, return processing, and stock updates. |
+| **Slide 15 — User & Admin Dashboards** | **15** (Patron Dashboard) & **18** (Admin Dashboard Metrics) | Contrasts patron self-service with administrative oversight. |
+| **Slide 16 — Error Handling & Security** | **03** (Validation Alert) & **14** (Duplicate Hold Rejection) | Shows frontend/backend validation and conflict prevention. |
+| **Slide 17 — Testing & Verification Results** | **31** (Automated Test Run 100%) & **32** (Clean Build Output) | Provides empirical proof of 192+ passing tests and clean Vite build. |
+| **Slide 18 — Conclusion & Future Scope** | *Roadmap Graphic / Future Milestones* | Concluding summary and post-academic feature roadmap. |
+

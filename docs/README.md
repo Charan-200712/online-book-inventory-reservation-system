@@ -13,14 +13,22 @@ This directory contains the complete technical documentation, project reports, v
   *Detailed 20-topic system architecture and technical specification guide describing backend layering, MVC patterns, and service interactions.*
 
 ### 2. Viva, Demonstration & Presentation Guides
+* [Final Presentation Slide Deck & Speaker Notes](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/final-presentation.md)  
+  *Complete 18-slide academic presentation deck with detailed speaker scripts calibrated for an 8–12 minute committee evaluation.*
+* [Live Technical Demonstration Flow](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/presentation-demo-flow.md)  
+  *Step-by-step 18-point execution runbook for presenting patron and administrative workflows live to examiners.*
+* [Viva Quick Revision Sheet](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/viva-quick-revision.md)  
+  *One-page rapid revision sheet containing concise 1-to-3 sentence model answers for 21 essential full-stack concepts.*
+* [Project Verbal Introduction Scripts](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/project-introduction.md)  
+  *Three tailored verbal presentation scripts (30-second, 1-minute, and 2-minute) for opening reviews, vivas, and evaluations.*
 * [Viva Questions & Answers Guide](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/viva-questions.md)  
-  *41 core viva examination questions with concise, accurate model answers covering General, React Frontend, Express Backend, MySQL Database, Authentication, Circulation, and Git.*
+  *55 core viva examination questions with model answers, including 14 specific post-demo follow-up examiner questions.*
 * [Demonstration Dialogue Script](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/demo-script.md)  
   *Practical 10-part, 5-to-10 minute live presentation dialogue script walking through patron and administrator workflows.*
 * [Project Demonstration & Viva Checklist](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/demo-checklist.md)  
   *Step-by-step 20-point practical demonstration sequence with key viva talking points and verification commands.*
 * [Report Screenshot Checklist](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/screenshot-checklist.md)  
-  *33-point visual screenshot checklist outlining key UI views, terminal outputs, and database states for college report figures.*
+  *33-point visual screenshot checklist outlining key UI views, terminal outputs, database states, and slide mappings.*
 
 ### 3. API & Engineering References
 * [REST API Quick Reference](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/api-quick-reference.md)  

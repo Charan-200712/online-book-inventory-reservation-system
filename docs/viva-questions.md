@@ -176,3 +176,56 @@ Every reservation, cancellation, issue, and return operation is executed within 
 
 ### Q41: How are Git merge conflicts resolved?
 **A:** When two branches modify the same lines of code, Git pauses and marks the conflict using `<<<<<<<`, `=======`, and `>>>>>>>`. The developer opens the conflicting files, chooses the correct logic, tests the application, stages the resolved files (`git add`), and completes the merge.
+
+---
+
+## 8. Questions an Examiner May Ask After the Demo
+
+### Q42: What happens if two users try to reserve the last available copy at the exact same millisecond?
+**A:** In our reservation service (`reservation.service.js`), the operation begins with `START TRANSACTION` followed by `SELECT available_copies FROM books WHERE id = ? FOR UPDATE`. MySQL's InnoDB engine places an exclusive row-level lock on that specific book. The first user's transaction reads `available_copies = 1`, decrements it to 0, inserts the reservation record, and commits (`COMMIT`). The second user's query is queued until the lock releases; when it unblocks, it reads `available_copies = 0`, recognizes no copies are available, and the backend returns `HTTP 400 Bad Request` ("No copies available for reservation").
+
+### Q43: How do you prevent duplicate reservations for the same book by the same user?
+**A:** Before creating a reservation, the backend executes a query on the `reservations` table checking for an existing record with `user_id = ? AND book_id = ? AND status IN ('PENDING', 'APPROVED')`. If an active reservation exists, the service throws a custom conflict error returning `HTTP 409 Conflict` with the message: *"You already have an active reservation for this book."*
+
+### Q44: What happens if a database operation fails halfway through an issue or reservation?
+**A:** Because all multi-step circulation operations are encapsulated within an explicit database transaction (`START TRANSACTION`), any runtime error or query failure triggers a `ROLLBACK` in the `catch` block. This ensures atomicity: either all changes (stock decrement, transaction creation, reservation status update) are committed together, or none of them persist, preventing half-updated data.
+
+### Q45: How do you protect administrative APIs from being called by normal students?
+**A:** Administrative endpoints are guarded by two chained middleware functions: `authMiddleware` followed by `roleMiddleware('ADMIN')`. `authMiddleware` verifies the cryptographic signature of the Bearer JWT and extracts the user's role. `roleMiddleware` then checks if `req.user.role === 'ADMIN'`. If a patron with role `USER` calls that route, the middleware immediately rejects the request with `HTTP 403 Forbidden` without executing the controller.
+
+### Q46: What happens when a user's JWT expires?
+**A:** Our JWTs are signed with a 24-hour expiration (`expiresIn: '24h'`). When an expired token is transmitted in the `Authorization` header, `jwt.verify()` in `authMiddleware` throws a `TokenExpiredError`. The middleware catches this and responds with `HTTP 401 Unauthorized` ("Token has expired"). On the frontend, the API service layer detects the 401 status, clears `localStorage`, resets the `AuthContext` state, and redirects the user to the `/login` screen.
+
+### Q47: How are user passwords stored in the database?
+**A:** Passwords are never stored in plaintext. When a user registers, `bcryptjs.hash(password, 10)` generates a 60-character salted hash using 10 rounds of salt. During login, `bcryptjs.compare()` verifies the candidate password against the stored hash in constant time to prevent timing attacks.
+
+### Q48: Why use a database connection pool instead of opening a single connection or creating one per request?
+**A:** Establishing a new TCP connection to MySQL involves network handshakes and authentication overhead (~10–50ms per request). A connection pool maintains an active pool of pre-established, reusable connections (configured for up to 10 connections in `config/db.js`). When a request arrives, it borrows an idle connection, executes queries, and releases it back to the pool, dramatically improving throughput and reducing server latency.
+
+### Q49: Why use parameterized queries (`?` placeholders) instead of string concatenation?
+**A:** Parameterized queries send SQL statements and user-supplied data to the database server in separate packets. The database compiles the SQL query structure first and treats user parameters strictly as literal values. Even if a user inputs `' OR '1'='1`, the database engine never interprets it as executable SQL syntax, completely neutralizing SQL Injection attacks.
+
+### Q50: How does the frontend know that data changed after an action like reserving a book?
+**A:** In our React components, operations like reserving a book or issuing a loan are asynchronous actions. When the API response resolves successfully, the component either:
+1. Re-fetches the updated resource using a state refresh trigger function.
+2. Optimistically/locally updates the relevant state variable (e.g., decrementing `available_copies` on the book state object or appending the new reservation to the active list).  
+When React state updates via `useState`, React automatically re-renders the component with the new data.
+
+### Q51: Why is `useEffect` used in the frontend components?
+**A:** `useEffect` allows components to perform side-effects—such as making HTTP calls to the Express backend to load books, authors, or dashboard summaries—immediately after mounting into the DOM. By passing an appropriate dependency array (e.g., `[searchTerm, availableOnly]`), the effect automatically re-executes whenever search filters change.
+
+### Q52: How does the search avoid sending an HTTP request for every single keystroke?
+**A:** We built a custom `useDebounce` hook that wraps the search term state. When the user types, a `setTimeout` timer is scheduled for 300 milliseconds. If the user types another letter within 300ms, the previous timer is cancelled (`clearTimeout`) and a new timer starts. The API call is triggered only when typing pauses for 300ms, collapsing multiple keystrokes into a single HTTP request.
+
+### Q53: What happens when an issued book is returned?
+**A:** The administrator triggers the return action on the active loan. The backend updates the record in `transactions` by setting `status = 'RETURNED'` and `return_date = CURDATE()`. Simultaneously, it executes `UPDATE books SET available_copies = available_copies + 1 WHERE id = ?`. If an administrator accidentally attempts to return an already returned book, the backend validates the record and returns `HTTP 409 Conflict`.
+
+### Q54: How do you detect overdue books?
+**A:** When a book is issued, the system stamps `issue_date = CURDATE()` and automatically sets `due_date = DATE_ADD(CURDATE(), INTERVAL 14 DAY)`. Overdue loans are queried dynamically by filtering for records where `status = 'ISSUED' AND due_date < CURDATE()`. This avoids the need for cron jobs or batch update scripts while ensuring 100% accurate, real-time overdue detection.
+
+### Q55: How do you maintain inventory consistency between total copies and available copies?
+**A:** Consistency is enforced by database-level check constraints and transactional logic:
+- `chk_available_copies`: `CHECK (available_copies >= 0)`
+- `chk_copies_valid`: `CHECK (available_copies <= total_copies)`  
+Every reservation, cancellation, issue, or return runs inside atomic transactions. If any operation attempts to decrement `available_copies` below zero or increment it above `total_copies`, MySQL throws a constraint violation and aborts the transaction, preserving inventory integrity.
+

@@ -155,12 +155,16 @@ FSD_PROJECT/
 │   └── README.md                    # Database setup instructions & data dictionary
 ├── docs/
 │   ├── README.md                    # Documentation index
+│   ├── final-presentation.md        # 18-slide academic presentation deck & speaker notes
+│   ├── presentation-demo-flow.md    # 18-step live examination demonstration sequence
+│   ├── viva-quick-revision.md       # One-page rapid revision sheet (21 full-stack concepts)
+│   ├── project-introduction.md      # Verbal presentation scripts (30s, 1min, 2min)
 │   ├── final-project-report.md      # Formal 25-section college project report
-│   ├── viva-questions.md            # 41 viva questions and model answers
+│   ├── viva-questions.md            # 55 viva questions and model answers (inc. post-demo)
 │   ├── demo-script.md               # 10-part, 5-to-10 minute presentation dialogue script
 │   ├── demo-checklist.md            # 20-step practical demonstration walkthrough
 │   ├── api-quick-reference.md       # Compact REST API directory table
-│   ├── screenshot-checklist.md      # 33-point screenshot guide for report figures
+│   ├── screenshot-checklist.md      # 33-point screenshot guide & presentation slide mapping
 │   ├── submission-checklist.md      # Comprehensive submission readiness checklist
 │   ├── release-checklist.md         # Final release audit & code freeze sign-off
 │   ├── project-documentation.md     # 20-section comprehensive technical document
