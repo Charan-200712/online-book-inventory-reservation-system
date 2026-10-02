@@ -10,9 +10,13 @@ const errorMiddleware = require('./middleware/errorMiddleware');
 const app = express();
 
 // 1. CORS Configuration
-const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+const clientUrlEnv = process.env.CLIENT_URL || 'http://localhost:5173';
+const allowedOrigins = clientUrlEnv.includes(',')
+  ? clientUrlEnv.split(',').map(s => s.trim()).filter(Boolean)
+  : clientUrlEnv;
+
 app.use(cors({
-  origin: clientUrl,
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

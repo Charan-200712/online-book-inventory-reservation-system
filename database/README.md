@@ -124,7 +124,10 @@ Tracks physical book issues, returns, due dates, and circulation history.
 ## How to Set Up and Run SQL Scripts
 
 ### 1. Prerequisites
-Ensure MySQL Server (8.0+) is running locally.
+* **RDBMS**: MySQL Server 8.0+
+* **Database Name**: `library_db`
+* **Default Character Set**: `utf8mb4`
+* **Collation**: `utf8mb4_unicode_ci`
 
 ### 2. Running Schema Setup
 To create the database, tables, relationships, constraints, and indexes, execute [`schema.sql`](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/database/schema.sql):
@@ -146,6 +149,36 @@ mysql -u root -p < database/seed.sql
 
 # On Windows PowerShell:
 cmd /c "mysql -u root -p < database\seed.sql"
+```
+
+---
+
+## Backend Connection & Environment Configuration
+
+The Express backend connects to MySQL using `mysql2/promise` with a connection pool configured in [`backend/src/config/db.js`](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/backend/src/config/db.js).
+
+### Required Environment Variables:
+| Variable | Default Value | Description |
+|---|---|---|
+| `DB_HOST` | `localhost` | MySQL server host address |
+| `DB_PORT` | `3306` | MySQL server port |
+| `DB_USER` | `root` | Database username |
+| `DB_PASSWORD` | *(empty)* | Database user password |
+| `DB_NAME` | `library_db` | Target database name |
+
+### Connection Pool Configuration:
+- `connectionLimit`: 10 concurrent pooled connections
+- `waitForConnections`: `true`
+- `queueLimit`: 0 (unlimited queue)
+- `enableKeepAlive`: `true`
+- `keepAliveInitialDelay`: 0ms
+
+### Production User Security Recommendation:
+In production environments, avoid connecting using the administrative `root` user. Instead, create a dedicated application user with restricted data manipulation privileges:
+```sql
+CREATE USER 'library_app'@'%' IDENTIFIED BY 'StrongRandomPassword123!#';
+GRANT SELECT, INSERT, UPDATE, DELETE ON library_db.* TO 'library_app'@'%';
+FLUSH PRIVILEGES;
 ```
 
 ---

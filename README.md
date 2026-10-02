@@ -6,7 +6,7 @@
 [![Vite](https://img.shields.io/badge/Vite-v6.0-purple.svg)](https://vitejs.dev/)
 [![MySQL](https://img.shields.io/badge/MySQL-v8.0-orange.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-132%20Passed-brightgreen.svg)](docs/testing.md)
+[![Tests](https://img.shields.io/badge/Tests-132%20Passed%20(100%25)-brightgreen.svg)](docs/testing.md)
 
 A full-stack departmental library management application engineered with **React (Vite)**, **Node.js/Express**, and **MySQL**. The system supports book cataloging, real-time debounced search, author attribution, transaction-safe concurrency-guarded reservations, circulation (issue/return tracking), overdue calculation, and role-based administrative dashboards.
 
@@ -14,96 +14,111 @@ A full-stack departmental library management application engineered with **React
 
 ## Table of Contents
 
-- [Problem Statement](#problem-statement)
-- [Key Features](#key-features)
-- [Technology Stack](#technology-stack)
-- [System Architecture](#system-architecture)
-- [Database Schema & ER Model](#database-schema--er-model)
-- [User Roles & Permissions Matrix](#user-roles--permissions-matrix)
-- [REST API Reference](#rest-api-reference)
-- [Project Directory Structure](#project-directory-structure)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [1. Clone Repository](#1-clone-repository)
-  - [2. Environment Configuration](#2-environment-configuration)
-  - [3. Database Setup](#3-database-setup)
-  - [4. Install Dependencies](#4-install-dependencies)
-  - [5. Run the Application](#5-run-the-application)
-- [Automated Testing & Quality Assurance](#automated-testing--quality-assurance)
-- [Git & GitHub Workflow](#git--github-workflow)
-- [Security & Production Hardening](#security--production-hardening)
+1. [Project Overview](#1-project-overview)
+2. [Key Features](#2-key-features)
+3. [Technology Stack](#3-technology-stack)
+4. [System Architecture](#4-system-architecture)
+5. [Project Structure](#5-project-structure)
+6. [Database Design](#6-database-design)
+7. [User Roles](#7-user-roles)
+8. [API Documentation](#8-api-documentation)
+9. [Environment Configuration](#9-environment-configuration)
+10. [Database Setup](#10-database-setup)
+11. [Backend Setup](#11-backend-setup)
+12. [Frontend Setup](#12-frontend-setup)
+13. [Testing](#13-testing)
+14. [Git Workflow](#14-git-workflow)
+15. [Deployment Readiness](#15-deployment-readiness)
+16. [Future Enhancements](#16-future-enhancements)
 
 ---
 
-## Problem Statement
+## 1. Project Overview
 
-Academic departments and institutional libraries often suffer from disorganized book circulation, uncoordinated reservations, and manual stock inaccuracies. Missing or delayed returns lead to inventory discrepancies and user frustration.
+Academic departments and institutional libraries frequently encounter operational friction due to manual book tracking, inaccurate inventory counts, race conditions during peak reservation requests, and unmonitored overdue loans.
 
-This system provides a reliable, transaction-safe digital solution that:
-1. Tracks inventory in real-time (`total_copies` vs. `available_copies`).
-2. Guarantees ACID-compliant reservation holds preventing race conditions.
-3. Manages book circulation with automated due dates and overdue calculation.
-4. Delivers tailored experiences for regular library patrons and library administrators.
-
----
-
-## Key Features
-
-### For Library Patrons (USER)
-- **Live Catalog & Search**: Instant debounced search by title, author, genre, or ISBN with availability toggles.
-- **Book Details & Author Bios**: Comprehensive views of books, publication years, descriptions, and linked author profiles.
-- **Transaction-Safe Reservations**: Reserve available books instantly with immediate inventory hold protection.
-- **Self-Service Reservation Management**: View active and historical reservations; cancel active reservations with immediate inventory restoration.
-- **Circulation History**: Monitor currently issued books, due dates, return statuses, and overdue notices.
-- **User Dashboard**: Unified patron overview with profile details, stats, active loans, and reservation lists.
-
-### For Library Administrators (ADMIN)
-- **Catalog Management (CRUD)**: Add, edit, and delete books and authors with form validation and dependency safeguards (preventing author deletion with linked titles).
-- **Circulation Desk**:
-  - Issue books directly or fulfill existing user reservations.
-  - Process book returns with automatic status updates (`RETURNED`) and inventory increments.
-- **Reservation Oversight**: View all reservations across patrons, inspect timestamps, and cancel reservations if needed.
-- **Overdue Monitoring**: Real-time identification of overdue loans past the standard loan duration (14 days).
-- **Admin Dashboard**: System-wide statistics (total books, available stock, active reservations, active loans, overdue items).
-
-### System & Engineering Highlights
-- **ACID Transaction Safety**: Multi-statement database operations wrapped in `START TRANSACTION`, `COMMIT`, and `ROLLBACK` blocks using a MySQL connection pool.
-- **JWT Authentication & Role Authorization**: Secure stateless authentication using `jsonwebtoken` with bcrypt password hashing (10 salt rounds).
-- **Defensive Error Handling**: Centralized error middleware returning normalized API error structures (`{ success: false, message, errors }`).
-- **Responsive UI/UX**: Built with React Hooks, clean semantic layouts, responsive navigation, loading skeletons, and inline alerts.
+The **Online Book Inventory & Reservation System** delivers a robust digital solution that:
+- Maintains strict physical and shelf inventory counts (`total_copies` vs. `available_copies`).
+- Enforces ACID-compliant transaction-safe reservation holds preventing race conditions on last-copy titles.
+- Automates circulation management, calculating due dates (14-day loan duration) and highlighting overdue books.
+- Delivers tailored self-service portals for regular patrons (`USER`) and operational oversight consoles for library administrators (`ADMIN`).
 
 ---
 
-## Technology Stack
+## 2. Key Features
 
-| Layer | Technologies |
-|---|---|
-| **Frontend** | React 18, Vite 6, React Router DOM v6, React Hooks (`useState`, `useEffect`, `useContext`, `useCallback`, `useMemo`), Vanilla CSS3 |
-| **Backend** | Node.js, Express.js 4.21, RESTful API Design |
-| **Database** | MySQL 8.0, `mysql2` (with Promises and Connection Pool) |
-| **Security** | JSON Web Tokens (`jsonwebtoken`), `bcrypt`, CORS, Environment variable isolation |
-| **Testing** | Custom Node.js assertion suites, Mock DOM harness, REST API integration runners |
-| **Tooling & VCS**| Git, npm workspaces, VS Code |
+The system implements the following verified features:
+
+* **User Registration & Login**: Patron self-registration with email validation and secure credential authentication.
+* **JWT Authentication**: Stateless session management with HMAC-SHA256 signed JSON Web Tokens.
+* **Role-Based Authorization**: Route guards enforcing granular access for `USER` and `ADMIN` roles.
+* **Book Management (CRUD)**: Administrative creation, editing, inventory stock adjustment, and deletion of books.
+* **Author Management (CRUD)**: Administrative author registry with biographical profiles and deletion safeguards.
+* **Live Book Search**: Real-time debounced keyword search querying title, author name, category, and ISBN.
+* **Availability Filtering**: Instant toggling between all titles and titles currently on the shelf (`available_copies > 0`).
+* **Concurrency-Safe Reservations**: Database row locking (`SELECT ... FOR UPDATE`) preventing negative stock on simultaneous reservations.
+* **Reservation Lifecycle & Approval**: State machine transitions (`PENDING` $\to$ `APPROVED` $\to$ `COMPLETED` or `CANCELLED`).
+* **Circulation Desk (Book Issue & Return)**: Issuing books (direct or reservation-linked) and returning books with atomic inventory restoration.
+* **Overdue Tracking**: Automated calculation of loan periods and real-time identification of overdue loans.
+* **Inventory Management**: Continuous validation ensuring $0 \le \text{available\_copies} \le \text{total\_copies}$.
+* **User Dashboard**: Unified patron overview of active reservation holds, loan due dates, and return history.
+* **Admin Dashboard**: Real-time operational metrics (catalog counts, available copies, active holds, issued loans, overdue items).
+* **Transaction History**: Audit logs of all physical book circulations with timestamps and statuses.
+* **Error Handling & Validation**: Centralized error middleware translating technical exceptions into safe, user-friendly responses without exposing SQL or stack traces.
 
 ---
 
-## System Architecture
+## 3. Technology Stack
+
+### Frontend
+* **React 18.3**: Declarative component-based user interface library.
+* **JavaScript (ES6+)**: Modern asynchronous programming (`async`/`await`, ES modules).
+* **Vite 6.0**: Fast build tool and development server with Hot Module Replacement (HMR).
+* **React Router DOM 6.28**: Client-side routing with protected route wrappers and dynamic navigation.
+* **React Hooks**: State and lifecycle management (`useState`, `useEffect`, `useContext`, `useCallback`, `useMemo`).
+* **Vanilla CSS3**: Responsive styling, CSS variables, flexbox, grid, and modal dialogs.
+
+### Backend
+* **Node.js v18+**: Asynchronous event-driven JavaScript server runtime.
+* **Express.js 4.21**: RESTful web application framework with modular routers and middleware pipeline.
+
+### Database
+* **MySQL 8.0**: Relational database management system with ACID transaction support.
+* **`mysql2/promise` (v3.12)**: Connection pool management with prepared statements and Promise API.
+
+### Authentication & Security
+* **JSON Web Tokens (`jsonwebtoken` v9.0)**: Stateless signed authorization tokens.
+* **`bcrypt` (v6.0)**: Cryptographic password hashing with 10 salt rounds.
+* **CORS**: Configurable cross-origin resource sharing supporting single or multi-domain origins.
+
+### Version Control & Tooling
+* **Git**: Distributed version control system following a structured feature-branch workflow.
+* **GitHub Workflow**: Pull request reviews, Conventional Commits standard, and zero-secret commit policies.
+
+---
+
+## 4. System Architecture
+
+The application is structured into a multi-tiered architecture with clean separation of concerns:
 
 ```text
 ┌────────────────────────────────────────────────────────┐
 │                   React 18 SPA (Vite)                  │
 │  - React Router (Public & Protected Routes)            │
-│  - AuthContext (JWT Token & User State Management)     │
-│  - Components (Catalog, Search, Dashboards, Forms)     │
+│  - AuthContext (JWT Token & Session State)             │
+│  - UI Components (Navbar, BookSearch, Modal, Alert)    │
+│  - Pages (Home, Books, Detail, Dashboard, Admin Views) │
 └───────────────────────────┬────────────────────────────┘
-                            │ HTTP / REST (JSON)
+                            │ HTTP / REST (Bearer JWT)
                             ▼
 ┌────────────────────────────────────────────────────────┐
 │                  Express.js 4 REST API                 │
-│  - Middleware: CORS, Auth Middleware, Role Guard       │
-│  - Controllers: Auth, Books, Authors, Res, Trans       │
-│  - Services: Transactional Business & Inventory Logic  │
-│  - Error Handling Middleware & Input Sanitization      │
+│  - Middleware: CORS, Request Logger, Auth Guard, RBAC  │
+│  - Routes: /api/auth, /api/books, /api/authors,        │
+│            /api/reservations, /api/transactions        │
+│  - Controllers: Input Sanitization & Response Formats  │
+│  - Services: ACID Business Logic & Concurrency Locks   │
+│  - Global Error Handling & 404 Interceptor             │
 └───────────────────────────┬────────────────────────────┘
                             │ mysql2 Connection Pool
                             ▼
@@ -111,13 +126,137 @@ This system provides a reliable, transaction-safe digital solution that:
 │                   MySQL 8.0 Database                   │
 │  - Tables: users, authors, books, reservations,        │
 │            transactions                                │
+│  - Row-Level Locking: SELECT ... FOR UPDATE            │
 │  - Foreign Keys, Constraints, Cascades, Indexes        │
 └────────────────────────────────────────────────────────┘
 ```
 
+### Backend Layering
+1. **Routes Layer (`routes/`)**: Defines HTTP verbs, paths, and middleware chains (`authMiddleware`, `roleMiddleware`).
+2. **Controllers Layer (`controllers/`)**: Parses request parameters, query strings, and payloads, invokes services, and returns standardized JSON responses.
+3. **Services Layer (`services/`)**: Implements business rules, MySQL transactions (`START TRANSACTION`, `COMMIT`, `ROLLBACK`), inventory updates, and validation logic.
+4. **Database Pool (`config/db.js`)**: Manages a connection pool of up to 10 reusable connections with keep-alive enabled.
+5. **Database (`MySQL`)**: Executes indexed queries and enforces relational constraints.
+
 ---
 
-## Database Schema & ER Model
+## 5. Project Structure
+
+```text
+FSD_PROJECT/
+├── .env.example                     # Root environment variable template
+├── .gitignore                       # Production gitignore (dependencies, build, env)
+├── LICENSE                          # Standard ISC License
+├── package.json                     # Root orchestrator scripts
+├── README.md                        # Primary project documentation
+├── database/
+│   ├── schema.sql                   # MySQL DDL schema with constraints & indexes
+│   ├── seed.sql                     # Initial sample data (admin, users, authors, books)
+│   └── README.md                    # Database setup instructions & data dictionary
+├── docs/
+│   ├── README.md                    # Documentation index
+│   ├── project-documentation.md     # 20-section comprehensive technical document
+│   ├── deployment.md                # Deployment guide & readiness checklist
+│   ├── testing.md                   # Complete test strategy, logs, and QA results
+│   └── git-workflow.md              # Branching model, PR process & commit rules
+├── backend/
+│   ├── .env.example                 # Backend environment variable template
+│   ├── package.json                 # Backend dependencies & scripts
+│   ├── src/
+│   │   ├── app.js                   # Express application setup & middleware stack
+│   │   ├── server.js                # Server entry point & connection pool test
+│   │   ├── config/
+│   │   │   └── db.js                # mysql2 connection pool configuration
+│   │   ├── controllers/
+│   │   │   ├── auth.controller.js   # Auth request handlers (register, login, me)
+│   │   │   ├── author.controller.js # Author CRUD handlers
+│   │   │   ├── book.controller.js   # Book catalog & search handlers
+│   │   │   ├── health.controller.js # Health probe controller
+│   │   │   ├── reservation.controller.js # Reservation lifecycle handlers
+│   │   │   └── transaction.controller.js # Circulation & loan handlers
+│   │   ├── middleware/
+│   │   │   ├── authMiddleware.js    # JWT verification middleware
+│   │   │   ├── roleMiddleware.js    # Role-based access control (ADMIN/USER)
+│   │   │   ├── loggerMiddleware.js  # Request duration logger
+│   │   │   ├── notFoundMiddleware.js# 404 route handler
+│   │   │   └── errorMiddleware.js   # Centralized error handler & sanitization
+│   │   ├── routes/
+│   │   │   ├── index.js             # Central router mounting all sub-routes
+│   │   │   ├── auth.routes.js
+│   │   │   ├── author.routes.js
+│   │   │   ├── book.routes.js
+│   │   │   ├── health.routes.js
+│   │   │   ├── reservation.routes.js
+│   │   │   └── transaction.routes.js
+│   │   ├── services/
+│   │   │   ├── auth.service.js      # Auth business logic & bcrypt hashing
+│   │   │   ├── author.service.js    # Author queries & dependency checks
+│   │   │   ├── book.service.js      # Book query builder & search filter
+│   │   │   ├── health.service.js    # Database connection test
+│   │   │   ├── reservation.service.js # Transaction-safe hold & cancel logic
+│   │   │   └── transaction.service.js # Book issue, return, and overdue logic
+│   │   └── utils/
+│   │       ├── asyncHandler.js      # Promise wrapper catching async errors
+│   │       ├── jwt.js               # JWT signing and verification helpers
+│   │       └── validators.js        # Input validation & sanitization helpers
+│   └── tests/
+│       ├── test_auth.js             # Auth unit & integration tests (11 tests)
+│       ├── test_authors_books.js    # Catalog & search test suite (15 tests)
+│       ├── test_reservations_transactions.js # Concurrency & loan tests (15 tests)
+│       ├── test_error_handling_validation.js # Boundary & hardening tests (22 tests)
+│       └── test_qa_comprehensive.js # Comprehensive QA regression harness (32 tests)
+└── frontend/
+    ├── .env.example                 # Frontend environment template
+    ├── package.json                 # Frontend dependencies & scripts
+    ├── vite.config.js               # Vite build configuration
+    ├── index.html                   # HTML5 shell
+    ├── src/
+    │   ├── main.jsx                 # React root mount
+    │   ├── App.jsx                  # Route definitions & layout wrappers
+    │   ├── index.css                # Global stylesheet & design tokens
+    │   ├── components/
+    │   │   ├── Navbar.jsx           # Global header navigation with auth state
+    │   │   ├── ProtectedRoute.jsx   # Role-guarded route wrapper
+    │   │   ├── BookCard.jsx         # Book display card
+    │   │   ├── BookSearch.jsx       # Real-time debounced search bar
+    │   │   ├── Alert.jsx            # Dynamic alert banner
+    │   │   ├── LoadingSpinner.jsx   # Async loading indicator
+    │   │   └── Modal.jsx            # Reusable accessible modal dialog
+    │   ├── context/
+    │   │   └── AuthContext.jsx      # Authentication & session context
+    │   ├── hooks/
+    │   │   └── useDebounce.js       # Custom debounce hook for search inputs
+    │   ├── pages/
+    │   │   ├── Home.jsx             # Welcome page
+    │   │   ├── Books.jsx            # Book catalog & live search
+    │   │   ├── BookDetail.jsx       # Individual book view & reserve action
+    │   │   ├── Authors.jsx          # Author directory & biography view
+    │   │   ├── Login.jsx            # Patron/admin login form
+    │   │   ├── Register.jsx         # Patron registration form
+    │   │   ├── Dashboard.jsx        # Patron reservation & loan dashboard
+    │   │   ├── AdminDashboard.jsx   # Administrative overview & stats
+    │   │   ├── AdminBooks.jsx       # Admin book catalog management
+    │   │   ├── AdminAuthors.jsx     # Admin author directory management
+    │   │   ├── AdminReservations.jsx# Admin reservation ledger & cancel
+    │   │   ├── AdminTransactions.jsx# Admin circulation desk (issue/return)
+    │   │   └── NotFound.jsx         # 404 fallback page
+    │   └── services/
+    │       ├── api.js               # Fetch client with JWT headers & error translation
+    │       ├── authService.js
+    │       ├── bookService.js
+    │       ├── authorService.js
+    │       ├── reservationService.js
+    │       ├── transactionService.js
+    │       └── adminService.js
+    └── tests/
+        └── test_frontend_integration.js # 37-step frontend integration test suite
+```
+
+---
+
+## 6. Database Design
+
+The database schema (`library_db`) is normalized and enforces data integrity through primary keys, unique constraints, foreign keys, and check constraints:
 
 ```mermaid
 erDiagram
@@ -133,392 +272,320 @@ erDiagram
         varchar email UK
         varchar password
         enum role "USER, ADMIN"
-        datetime created_at
+        timestamp created_at
     }
 
     AUTHORS {
         int id PK
         varchar name
-        text bio
-        datetime created_at
+        text biography
+        timestamp created_at
     }
 
     BOOKS {
         int id PK
         varchar title
         varchar isbn UK
-        varchar genre
-        int publication_year
+        int author_id FK
+        varchar category
         int total_copies
         int available_copies
-        int author_id FK
-        datetime created_at
+        text description
+        timestamp created_at
+        timestamp updated_at
     }
 
     RESERVATIONS {
         int id PK
         int user_id FK
         int book_id FK
-        enum status "PENDING, FULFILLED, CANCELLED"
-        datetime reservation_date
-        datetime created_at
+        timestamp reservation_date
+        enum status "PENDING, APPROVED, CANCELLED, COMPLETED"
     }
 
     TRANSACTIONS {
         int id PK
         int user_id FK
         int book_id FK
-        datetime issue_date
-        datetime due_date
-        datetime return_date
-        enum status "ISSUED, RETURNED"
-        datetime created_at
+        int reservation_id FK
+        timestamp issue_date
+        date due_date
+        date return_date
+        enum status "ISSUED, RETURNED, OVERDUE"
     }
 ```
 
+### Relational Table Rules:
+1. **`authors (1) -> (N) books`**: `books.author_id` references `authors.id` with `ON DELETE SET NULL` and `ON UPDATE CASCADE`. Deleting an author does not delete their books; the author reference is safely set to `NULL`.
+2. **`users (1) -> (N) reservations`**: `reservations.user_id` references `users.id` with `ON DELETE RESTRICT` to preserve patron hold records.
+3. **`books (1) -> (N) reservations`**: `reservations.book_id` references `books.id` with `ON DELETE RESTRICT` to preserve reservation history.
+4. **`users (1) -> (N) transactions`**: `transactions.user_id` references `users.id` with `ON DELETE RESTRICT` to preserve borrowing audit trails.
+5. **`books (1) -> (N) transactions`**: `transactions.book_id` references `books.id` with `ON DELETE RESTRICT` to maintain circulation records.
+6. **`reservations (1) -> (N) transactions`**: `transactions.reservation_id` references `reservations.id` with `ON DELETE SET NULL`. Direct loans have `reservation_id = NULL`.
+7. **Check Constraints**:
+   - `chk_total_copies`: `CHECK (total_copies >= 0)`
+   - `chk_available_copies`: `CHECK (available_copies >= 0)`
+   - `chk_copies_valid`: `CHECK (available_copies <= total_copies)`
+
 ---
 
-## User Roles & Permissions Matrix
+## 7. User Roles
 
-| Capability / Resource | Public (Guest) | Registered User | Administrator |
+The system enforces a strict two-role permission matrix:
+
+| Capability / Resource | Public (Guest) | Registered User (`USER`) | Administrator (`ADMIN`) |
 |---|:---:|:---:|:---:|
 | User Registration & Login | Yes | Yes | Yes |
-| Browse & Search Books | Yes | Yes | Yes |
-| View Book & Author Details | Yes | Yes | Yes |
-| Reserve Available Book | No | Yes | Yes |
-| View Own Dashboard & Loans | No | Yes | Yes |
-| Cancel Own Active Reservation | No | Yes | Yes |
-| Manage Books (Create, Update, Delete) | No | No | Yes |
-| Manage Authors (Create, Update, Delete)| No | No | Yes |
-| Issue Book / Fulfill Reservation | No | No | Yes |
-| Process Book Returns | No | No | Yes |
+| Browse & Search Books | No (Requires Login) | Yes | Yes |
+| View Book & Author Details | No (Requires Login) | Yes | Yes |
+| Place Book Reservation Hold | No | Yes | Yes |
+| View Own Reservation Holds | No | Yes | Yes |
+| Cancel Own Active Hold | No | Yes | Yes |
+| View Own Loan History | No | Yes | Yes |
+| Access Patron Dashboard | No | Yes | Yes |
+| Create, Update, Delete Books | No | No | Yes |
+| Create, Update, Delete Authors | No | No | Yes |
 | View All Patron Reservations | No | No | Yes |
+| Approve Reservation Holds | No | No | Yes |
+| Issue Book (Direct or Hold-Fulfillment) | No | No | Yes |
+| Process Book Returns | No | No | Yes |
 | View All Circulation Records | No | No | Yes |
-| Access Admin Dashboard & Metrics | No | No | Yes |
+| Monitor Overdue Loans | No | No | Yes |
+| Access Administrative Console | No | No | Yes |
 
 ---
 
-## REST API Reference
+## 8. API Documentation
 
-All backend endpoints are prefixed with `/api`. Protected routes require `Authorization: Bearer <token>`.
+All API endpoints are mounted under the `/api` prefix. Protected routes require the HTTP header:
+`Authorization: Bearer <jwt_token>`
 
-### Authentication (`/api/auth`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/api/auth/register` | Public | Register new user account (`name`, `email`, `password`, optional `role`) |
-| `POST` | `/api/auth/login` | Public | Authenticate credentials and receive signed JWT |
-| `GET` | `/api/auth/profile` | USER / ADMIN | Retrieve authenticated user profile |
+### 8.1 Health Check
+| Method | Endpoint | Auth | Role | Description |
+|---|---|---|---|---|
+| `GET` | `/api/health` | None | Public | Returns server status and database connectivity (`200 OK` or `503 Service Unavailable`). |
 
-### Authors (`/api/authors`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/api/authors` | Public | List all authors |
-| `GET` | `/api/authors/:id` | Public | Get single author details with linked books |
-| `POST` | `/api/authors` | ADMIN | Create new author |
-| `PUT` | `/api/authors/:id` | ADMIN | Update author information |
-| `DELETE`| `/api/authors/:id` | ADMIN | Delete author (safeguarded against linked books) |
+### 8.2 Authentication (`/api/auth`)
+| Method | Endpoint | Auth | Role | Description & Parameters |
+|---|---|---|---|---|
+| `POST` | `/api/auth/register` | None | Public | Register account. Body: `{ name, email, password, role? }`. |
+| `POST` | `/api/auth/login` | None | Public | Authenticate user. Body: `{ email, password }`. Returns JWT token and user profile. |
+| `POST` | `/api/auth/logout` | None | Public | Signals client to clear local session token. |
+| `GET` | `/api/auth/me` | JWT | USER / ADMIN | Retrieves authenticated user profile (`id`, `name`, `email`, `role`). |
 
-### Books (`/api/books`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/api/books` | Public | Search books with query filters (`search`, `author_id`, `available`, `genre`) |
-| `GET` | `/api/books/:id` | Public | Get book details including author profile |
-| `POST` | `/api/books` | ADMIN | Create new book entry |
-| `PUT` | `/api/books/:id` | ADMIN | Update book details and inventory stock |
-| `DELETE`| `/api/books/:id` | ADMIN | Delete book |
+### 8.3 Books (`/api/books`)
+| Method | Endpoint | Auth | Role | Description & Parameters |
+|---|---|---|---|---|
+| `GET` | `/api/books` | JWT | USER / ADMIN | List books. Query: `available` (`true`/`false`), `author_id`, `category`, `page`, `limit`. |
+| `GET` | `/api/books/search` | JWT | USER / ADMIN | Live search. Query: `q` (keyword for title, isbn, author, category), `available` (`true`/`false`). |
+| `GET` | `/api/books/:id` | JWT | USER / ADMIN | Get single book details with linked author profile. |
+| `POST` | `/api/books` | JWT | ADMIN | Create book. Body: `{ title, isbn, author_id, category, total_copies, available_copies, description }`. |
+| `PUT` | `/api/books/:id` | JWT | ADMIN | Update book details and inventory counts. |
+| `DELETE`| `/api/books/:id` | JWT | ADMIN | Delete book (safeguarded against active circulation/reservations). |
 
-### Reservations (`/api/reservations`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/api/reservations` | USER / ADMIN | Place reservation hold (transaction-safe stock decrement) |
-| `GET` | `/api/reservations/my` | USER / ADMIN | Get authenticated user's reservations |
-| `PUT` | `/api/reservations/:id/cancel` | USER / ADMIN | Cancel reservation (restores available stock) |
-| `GET` | `/api/reservations` | ADMIN | List all reservations with user/book details |
+### 8.4 Authors (`/api/authors`)
+| Method | Endpoint | Auth | Role | Description & Parameters |
+|---|---|---|---|---|
+| `GET` | `/api/authors` | JWT | USER / ADMIN | List all authors. |
+| `GET` | `/api/authors/:id` | JWT | USER / ADMIN | Get author details including array of associated books. |
+| `POST` | `/api/authors` | JWT | ADMIN | Create author. Body: `{ name, biography }`. |
+| `PUT` | `/api/authors/:id` | JWT | ADMIN | Update author information. |
+| `DELETE`| `/api/authors/:id` | JWT | ADMIN | Delete author (safeguarded against linked catalog books). |
 
-### Transactions / Circulation (`/api/transactions`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/api/transactions/issue` | ADMIN | Issue book (with optional reservation fulfillment) |
-| `PUT` | `/api/transactions/:id/return` | ADMIN | Return issued book (increments stock) |
-| `GET` | `/api/transactions/my` | USER / ADMIN | Get authenticated user's loan history |
-| `GET` | `/api/transactions` | ADMIN | List all circulation records (supports `status` filter) |
+### 8.5 Reservations (`/api/reservations`)
+| Method | Endpoint | Auth | Role | Description & Parameters |
+|---|---|---|---|---|
+| `POST` | `/api/reservations` | JWT | USER / ADMIN | Place reservation hold. Body: `{ book_id }`. Decrements `available_copies` atomically. |
+| `GET` | `/api/reservations` | JWT | USER / ADMIN | Retrieve authenticated user's own reservations. |
+| `GET` | `/api/reservations/all` | JWT | ADMIN | Retrieve all reservations across all patrons. |
+| `GET` | `/api/reservations/:id` | JWT | USER / ADMIN | Get single reservation details (must be owner or ADMIN). |
+| `PUT` | `/api/reservations/:id/approve` | JWT | ADMIN | Approve a pending reservation hold. |
+| `PUT` | `/api/reservations/:id/cancel` | JWT | USER / ADMIN | Cancel reservation hold. Restores `available_copies` atomically. |
 
-### Health Check (`/api/health`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/api/health` | Public | Server uptime and health probe |
-
----
-
-## Project Directory Structure
-
-```text
-FSD_PROJECT/
-├── .env.example                     # Root environment variables template
-├── .gitignore                       # Comprehensive Git ignore rules
-├── package.json                     # Root orchestrator scripts
-├── README.md                        # Primary project documentation
-├── database/
-│   ├── schema.sql                   # MySQL DDL schema with constraints & indexes
-│   ├── seed.sql                     # Initial sample data (admin, users, authors, books)
-│   └── README.md                    # Database setup instructions
-├── docs/
-│   ├── README.md                    # Documentation index
-│   ├── testing.md                   # Comprehensive testing guide & QA results
-│   └── git-workflow.md              # Branching model, PR process & conventions
-├── backend/
-│   ├── .env.example                 # Backend environment variable template
-│   ├── package.json                 # Backend dependencies & scripts
-│   ├── src/
-│   │   ├── app.js                   # Express application setup & middleware stack
-│   │   ├── server.js                # Server entry point & connection listener
-│   │   ├── config/
-│   │   │   └── db.js                # mysql2 connection pool configuration
-│   │   ├── controllers/
-│   │   │   ├── authController.js    # Auth request handlers
-│   │   │   ├── authorController.js  # Author CRUD handlers
-│   │   │   ├── bookController.js    # Book catalog handlers
-│   │   │   ├── reservationController.js
-│   │   │   └── transactionController.js
-│   │   ├── middleware/
-│   │   │   ├── auth.js              # JWT verification middleware
-│   │   │   ├── roleCheck.js         # Role-based access control (ADMIN/USER)
-│   │   │   └── errorHandler.js      # Global error & 404 handler
-│   │   ├── routes/
-│   │   │   ├── authRoutes.js
-│   │   │   ├── authorRoutes.js
-│   │   │   ├── bookRoutes.js
-│   │   │   ├── reservationRoutes.js
-│   │   │   └── transactionRoutes.js
-│   │   ├── services/
-│   │   │   ├── authorService.js     # Author SQL queries
-│   │   │   ├── bookService.js       # Book query builder & inventory checks
-│   │   │   ├── reservationService.js# Transaction-safe reservation operations
-│   │   │   └── transactionService.js# Circulation issue & return transactions
-│   │   └── utils/
-│   │       ├── jwt.js               # JWT signing and verification helpers
-│   │       └── validators.js        # Input sanitization and validation rules
-│   └── tests/
-│       ├── test_auth.js             # Auth unit & integration tests
-│       ├── test_authors_books.js    # Catalog & search test suite
-│       ├── test_reservations_transactions.js # Concurrency & transaction tests
-│       ├── test_error_handling_validation.js # Validation & hardening tests
-│       └── test_qa_comprehensive.js # Comprehensive Phase 12 regression harness
-└── frontend/
-    ├── .env.example                 # Frontend environment template
-    ├── package.json                 # Frontend dependencies & scripts
-    ├── vite.config.js               # Vite build configuration
-    ├── index.html                   # HTML5 shell
-    ├── src/
-    │   ├── main.jsx                 # React root mount
-    │   ├── App.jsx                  # Route definitions & layout wrappers
-    │   ├── index.css                # Global stylesheet & design tokens
-    │   ├── components/
-    │   │   ├── Navbar.jsx           # Global header navigation
-    │   │   ├── ProtectedRoute.jsx   # Role-guarded route wrapper
-    │   │   ├── BookCard.jsx         # Book display card
-    │   │   ├── BookSearch.jsx       # Real-time debounced search bar
-    │   │   ├── Alert.jsx            # Dynamic alert banner
-    │   │   ├── LoadingSpinner.jsx   # Async loading indicator
-    │   │   └── Modal.jsx            # Reusable modal dialog
-    │   ├── context/
-    │   │   └── AuthContext.jsx      # Authentication & session context
-    │   ├── hooks/
-    │   │   └── useDebounce.js       # Custom debounce hook for search inputs
-    │   ├── pages/
-    │   │   ├── Home.jsx             # Welcome page
-    │   │   ├── Books.jsx            # Book catalog & live search
-    │   │   ├── BookDetail.jsx       # Individual book view & reserve action
-    │   │   ├── Authors.jsx          # Author directory & author details
-    │   │   ├── Login.jsx            # Authentication form
-    │   │   ├── Register.jsx         # Patron registration form
-    │   │   ├── Dashboard.jsx        # Patron reservation & loan dashboard
-    │   │   ├── AdminDashboard.jsx   # Administrative overview & stats
-    │   │   ├── AdminBooks.jsx       # Admin book catalog management
-    │   │   ├── AdminAuthors.jsx     # Admin author directory management
-    │   │   ├── AdminReservations.jsx# Admin reservation ledger & cancel
-    │   │   ├── AdminTransactions.jsx# Admin circulation desk (issue/return)
-    │   │   └── NotFound.jsx         # 404 fallback page
-    │   └── services/
-    │       ├── api.js               # Fetch wrapper with JWT headers & error normalization
-    │       ├── authService.js
-    │       ├── bookService.js
-    │       ├── authorService.js
-    │       ├── reservationService.js
-    │       └── transactionService.js
-    └── tests/
-        └── test_frontend_integration.js # 37 integration tests
-```
+### 8.6 Transactions / Circulation (`/api/transactions`)
+| Method | Endpoint | Auth | Role | Description & Parameters |
+|---|---|---|---|---|
+| `GET` | `/api/transactions` | JWT | USER / ADMIN | Retrieve authenticated user's loan history. |
+| `GET` | `/api/transactions/all` | JWT | ADMIN | Retrieve all circulation records with optional status filter. |
+| `GET` | `/api/transactions/overdue` | JWT | ADMIN | Retrieve all active loans past their due date. |
+| `POST` | `/api/transactions/issue` | JWT | ADMIN | Issue book. Body: `{ user_id, book_id, reservation_id? }`. |
+| `POST` | `/api/transactions/:id/return` | JWT | ADMIN | Return issued book. Sets `return_date` and increments `available_copies` atomically. |
 
 ---
 
-## Getting Started
+## 9. Environment Configuration
 
-### Prerequisites
-- **Node.js**: v18.0.0 or higher
-- **npm**: v9.0.0 or higher
-- **MySQL**: 8.0 or higher
+All environment-specific parameters and secrets are configured via `.env` files. Template files with clear placeholders are provided:
 
----
-
-### 1. Clone Repository
-```bash
-git clone <repository-url>
-cd FSD_PROJECT
-```
-
----
-
-### 2. Environment Configuration
-
-#### Backend Configuration
-Copy `.env.example` to `backend/.env`:
-```bash
-cp backend/.env.example backend/.env
-```
-Edit `backend/.env` with your local MySQL credentials:
+### Backend Configuration (`backend/.env`)
 ```ini
+# Environment & Server Port
+NODE_ENV=production
 PORT=5000
+
+# CORS Allowed Origin(s) (Single URL or comma-separated list)
 CLIENT_URL=http://localhost:5173
 
+# MySQL Database Settings
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=your_mysql_password
+DB_PASSWORD=replace_with_secure_database_password
 DB_NAME=library_db
 
-JWT_SECRET=your_super_secret_jwt_key_min_32_chars
+# JWT Secret & Lifespan
+JWT_SECRET=replace_with_secure_random_jwt_secret_min_32_chars
 JWT_EXPIRES_IN=1h
 
+# Circulation Rules
 BOOK_LOAN_DAYS=14
 ```
 
-#### Frontend Configuration
-Copy `.env.example` to `frontend/.env`:
-```bash
-cp frontend/.env.example frontend/.env
-```
-Ensure `VITE_API_BASE_URL` points to your backend:
+### Frontend Configuration (`frontend/.env`)
 ```ini
+# Public API Base URL
 VITE_API_BASE_URL=http://localhost:5000/api
 ```
+> [!CAUTION]
+> Never place real secrets, passwords, or private database credentials in Git or in `VITE_*` frontend environment variables.
 
 ---
 
-### 3. Database Setup
+## 10. Database Setup
 
-Log in to MySQL and execute the schema and seed scripts:
-```bash
-# Windows PowerShell
-Get-Content database/schema.sql | mysql -u root -p
-Get-Content database/seed.sql | mysql -u root -p
+Ensure MySQL Server 8.0+ is running locally or on your target database server.
 
-# Linux / macOS
-mysql -u root -p < database/schema.sql
-mysql -u root -p < database/seed.sql
-```
+1. **Create Database & Apply Schema**:
+   Execute [`database/schema.sql`](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/database/schema.sql) to create `library_db`, all 5 tables, foreign keys, check constraints, and performance indexes:
+   ```bash
+   mysql -u root -p < database/schema.sql
+   ```
+2. **Seed Initial Data**:
+   Execute [`database/seed.sql`](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/database/seed.sql) to populate standard dev accounts, authors, and books:
+   ```bash
+   mysql -u root -p < database/seed.sql
+   ```
 
-Default seeded accounts:
+### Default Seeded Accounts:
 | Role | Email | Password |
 |---|---|---|
-| **Admin** | `admin@library.com` | `Admin@123` |
-| **User** | `user1@library.com` | `User@123` |
-| **User** | `user2@library.com` | `User@123` |
+| **Administrator** | `admin@library.edu` | `Admin@123` |
+| **User (Student)** | `rahul.sharma@college.edu` | `Student@123` |
+| **User (Student)** | `priya.patel@college.edu` | `Student@123` |
+| **User (Student)** | `arun.kumar@college.edu` | `Student@123` |
 
 ---
 
-### 4. Install Dependencies
+## 11. Backend Setup
 
-You can install all dependencies from the root directory:
 ```bash
-npm run install:all
+# Navigate to backend directory
+cd backend
+
+# Install dependencies
+npm install
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your MySQL credentials and JWT secret
+
+# Start server for production
+npm start
+
+# Or start with file watcher for development
+npm run dev
 ```
-*Or install manually inside each subfolder:*
-```bash
-cd backend && npm install
-cd ../frontend && npm install
-```
+The backend initializes the MySQL connection pool and listens on `http://localhost:5000`.
+Health check: `http://localhost:5000/api/health`.
 
 ---
 
-### 5. Run the Application
+## 12. Frontend Setup
 
-#### Start Backend (Terminal 1)
 ```bash
-npm run backend
-# Server runs at http://localhost:5000
-```
+# Navigate to frontend directory
+cd frontend
 
-#### Start Frontend (Terminal 2)
-```bash
-npm run frontend
-# Vite dev server runs at http://localhost:5173
+# Install dependencies
+npm install
+
+# Configure environment
+cp .env.example .env
+# Verify VITE_API_BASE_URL points to your backend API
+
+# Start development server
+npm run dev
+
+# Or build optimized production bundle
+npm run build
 ```
+The Vite development server runs on `http://localhost:5173`.
+Production assets are generated in `frontend/dist/`.
 
 ---
 
-## Automated Testing & Quality Assurance
+## 13. Testing
 
-The application includes **132 automated tests** across 6 test suites covering authentication, CRUD operations, transaction-safe inventory holds, circulation workflows, input validation, and frontend state synchronization.
+The application includes **132 automated tests** across 6 test suites covering the complete stack.
 
-### Run All Tests (Root)
+### Run All Automated Tests from Root:
 ```bash
 npm test
 ```
+This executes `npm run test:backend` followed by `npm run test:frontend`.
 
-### Run Backend Tests Separately
-```bash
-npm run test:backend
-```
-Executes:
-1. `test_auth.js` (11 tests): Registration, login, JWT validation, profile.
-2. `test_authors_books.js` (15 tests): Author/Book CRUD, search, pagination.
-3. `test_reservations_transactions.js` (15 tests): Concurrency safety, inventory decrement/increment, issue/return.
-4. `test_error_handling_validation.js` (22 tests): Malformed JSON, XSS, boundary conditions.
-5. `test_qa_comprehensive.js` (32 tests): Full multi-user concurrent workflows, RBAC integrity.
+### Test Suite Breakdown:
+1. `backend/tests/test_auth.js` (11 tests): Registration, login, password hashing, JWT authorization, profile retrieval.
+2. `backend/tests/test_authors_books.js` (15 tests): Catalog CRUD, left joins, search queries, pagination.
+3. `backend/tests/test_reservations_transactions.js` (15 tests): Transaction-safe inventory holds, cancellation, issuance, return.
+4. `backend/tests/test_error_handling_validation.js` (22 tests): Malformed JSON, XSS sanitization, boundary conditions.
+5. `backend/tests/test_qa_comprehensive.js` (32 tests): Multi-user concurrency, RBAC enforcement, state machine validation.
+6. `frontend/tests/test_frontend_integration.js` (37 tests): Live search, debounce, React state sync, dashboard UX, route protection.
 
-### Run Frontend Integration Tests
-```bash
-npm run test:frontend
-```
-Executes:
-- `test_frontend_integration.js` (37 tests): Component rendering, state transitions, hooks, route protection, API contract alignment.
-
-### Production Build Verification
-```bash
-npm run build:frontend
-```
-Verifies that all JSX/React modules compile without errors or warnings.
-
-For detailed test reports, methodology, and defect resolution logs, see [docs/testing.md](docs/testing.md).
+**Test Pass Rate**: 132 / 132 tests passed (100%).
+For full execution logs and defect resolution history, see [docs/testing.md](docs/testing.md).
 
 ---
 
-## Git & GitHub Workflow
+## 14. Git Workflow
 
-We maintain a strict Git workflow to keep `master` deployable at all times:
+The project follows a structured Git branching and commit convention to guarantee production stability:
 
-1. **Branching Model**:
-   - `master`: Protected release branch.
-   - `feature/<name>`: New capabilities (e.g., `feature/book-export`).
-   - `fix/<name>`: Bug fixes (e.g., `fix/due-date-calculation`).
-   - `chore/<name>`: Build, tooling, documentation updates.
-2. **Conventional Commits**: Format commit messages as `<type>(<scope>): <description>`.
-3. **Pre-Commit Checks**: Always run `npm test` and `npm run build:frontend` before opening a Pull Request.
-4. **Credential Protection**: Never commit `.env` files. Verify `git status` before committing.
+- **Branching Model**:
+  - `master`: Protected release branch.
+  - `feature/<name>`: New feature branches.
+  - `fix/<name>`: Bug fix branches.
+  - `chore/<name>`: Build, tooling, documentation updates.
+- **Commit Conventions**: Conventional Commits standard (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`).
+- **Pre-Commit Checks**: Every pull request requires passing `npm test` and `npm run build:frontend`.
+- **Zero Secrets Policy**: `.gitignore` strictly excludes `.env` files, secrets, and build artifacts.
 
-Detailed instructions, code review checklists, and merge conflict resolution guides are documented in [docs/git-workflow.md](docs/git-workflow.md).
+For complete guidelines, pull request templates, and merge conflict resolution steps, see [docs/git-workflow.md](docs/git-workflow.md).
 
 ---
 
-## Security & Production Hardening
+## 15. Deployment Readiness
 
-- **SQL Injection Prevention**: 100% of database queries use parameterized SQL via `mysql2`.
-- **Password Security**: Passwords hashed using `bcrypt` with salt rounds set to 10.
-- **XSS & Input Sanitization**: Inputs trimmed, types validated, and HTML-escaped before persistence.
-- **Role-Based Authorization**: Middleware verifies both JWT signature and required role before invoking controllers.
-- **Transaction Safety**: Financial/inventory updates utilize MySQL transactions (`START TRANSACTION`, `COMMIT`, `ROLLBACK`) to eliminate race conditions under concurrent requests.
-- **CORS Restricted**: API only accepts requests from configured `CLIENT_URL`.
+The project is architected and configured for seamless deployment:
+- **Environment Isolation**: All hosts, ports, database credentials, JWT secrets, and CORS origins are driven by environment variables.
+- **Production Asset Compilation**: Frontend compiles cleanly into static HTML/CSS/JS with Vite (`npm run build`).
+- **Health Probing**: The `/api/health` endpoint enables load balancer health checks and uptime monitoring.
+- **CORS Support**: Supports single or multi-domain origins for separate frontend/backend hosting.
+- **Process Management**: Backend is ready for process managers (PM2, Docker, or systemd).
+
+> [!NOTE]
+> The application has been prepared and verified for deployment. It is not currently deployed to public cloud infrastructure. Follow [docs/deployment.md](docs/deployment.md) for step-by-step production deployment instructions.
+
+---
+
+## 16. Future Enhancements
+
+The following enhancements are identified for future versions:
+1. **Automated Notifications**: Email and SMS alerts for upcoming loan due dates and approved reservations using Nodemailer or SendGrid.
+2. **Fine & Overdue Fee Calculation**: Automated fine calculation based on days overdue with online payment gateway integration.
+3. **Barcode / QR Code Scanner**: Integrated camera scanning in the React frontend for instant book checkouts and returns.
+4. **CI/CD Pipeline**: GitHub Actions workflows for automated testing, linting, and continuous deployment.
+5. **Advanced Reporting**: Exportable statistical reports (PDF/CSV) detailing patron reading habits, peak borrowing hours, and inventory turnover rates.
 
 ---
 
