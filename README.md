@@ -155,6 +155,8 @@ FSD_PROJECT/
 │   └── README.md                    # Database setup instructions & data dictionary
 ├── docs/
 │   ├── README.md                    # Documentation index
+│   ├── final-package-guide.md       # Final submission package & setup runbook
+│   ├── final-submission-status.md   # Official project submission status report
 │   ├── final-presentation.md        # 18-slide academic presentation deck & speaker notes
 │   ├── presentation-demo-flow.md    # 18-step live examination demonstration sequence
 │   ├── viva-quick-revision.md       # One-page rapid revision sheet (21 full-stack concepts)

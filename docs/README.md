@@ -31,6 +31,10 @@ This directory contains the complete technical documentation, project reports, v
   *33-point visual screenshot checklist outlining key UI views, terminal outputs, database states, and slide mappings.*
 
 ### 3. API & Engineering References
+* [Final Package & Repository Guide](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/final-package-guide.md)  
+  *Comprehensive guide and clean-slate setup runbook for evaluators, examiners, and developers.*
+* [Final Project Submission Status](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/final-submission-status.md)  
+  *Official project submission report covering development, testing, security, Git, and code-freeze status.*
 * [REST API Quick Reference](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/api-quick-reference.md)  
   *Compact reference table documenting all implemented endpoints, HTTP methods, access roles, query parameters, and status codes.*
 * [Final Project Submission Checklist](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/submission-checklist.md)  
