@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node tests/test_auth.js && node tests/test_authors_books.js && node tests/test_reservations_transactions.js && node tests/test_error_handling_validation.js"
+    "test": "node tests/test_auth.js && node tests/test_authors_books.js && node tests/test_reservations_transactions.js && node tests/test_error_handling_validation.js && node tests/test_qa_comprehensive.js"
   },
   "keywords": [
     "library",

@@ -27,7 +27,7 @@ A departmental library requires a web application to manage book stocks, search 
 * VS Code
 
 ## Current Phase
-Phase 11 — Error Handling, Validation & UX Hardening (Complete)
+Phase 12 — Comprehensive Testing & Quality Assurance (Complete)
 
 ## Implemented & Planned Features
 * [x] Project architecture & Express setup (Phase 1)
@@ -42,6 +42,7 @@ Phase 11 — Error Handling, Validation & UX Hardening (Complete)
 * [x] User dashboard, book reservations, self-cancellation & circulation history (Phase 9)
 * [x] Administrator dashboard & catalog/circulation management UI (Phase 10)
 * [x] Error handling, validation, sanitization & UX hardening (Phase 11)
+* [x] Comprehensive testing, QA verification & documentation (Phase 12)
 
 ## Project Structure
 ```text
