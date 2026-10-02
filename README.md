@@ -155,6 +155,7 @@ FSD_PROJECT/
 │   └── README.md                    # Database setup instructions & data dictionary
 ├── docs/
 │   ├── README.md                    # Documentation index
+│   ├── demo-checklist.md            # 20-step practical demonstration walkthrough
 │   ├── project-documentation.md     # 20-section comprehensive technical document
 │   ├── deployment.md                # Deployment guide & readiness checklist
 │   ├── testing.md                   # Complete test strategy, logs, and QA results
@@ -540,10 +541,13 @@ This executes `npm run test:backend` followed by `npm run test:frontend`.
 3. `backend/tests/test_reservations_transactions.js` (15 tests): Transaction-safe inventory holds, cancellation, issuance, return.
 4. `backend/tests/test_error_handling_validation.js` (22 tests): Malformed JSON, XSS sanitization, boundary conditions.
 5. `backend/tests/test_qa_comprehensive.js` (32 tests): Multi-user concurrency, RBAC enforcement, state machine validation.
-6. `frontend/tests/test_frontend_integration.js` (37 tests): Live search, debounce, React state sync, dashboard UX, route protection.
+6. `backend/tests/verify_db_state.js` (6 checks): Database schema, inventory bounds, and table structure verification.
+7. `backend/tests/test_phase15_e2e_verification.js` (54 assertions): Comprehensive Phase 15 End-to-End verification.
+8. `frontend/tests/test_frontend_integration.js` (37 tests): Live search, debounce, React state sync, dashboard UX, route protection.
 
-**Test Pass Rate**: 132 / 132 tests passed (100%).
+**Test Pass Rate**: 100% Pass Rate across all test suites.
 For full execution logs and defect resolution history, see [docs/testing.md](docs/testing.md).
+For a step-by-step practical presentation walkthrough, see [docs/demo-checklist.md](docs/demo-checklist.md).
 
 ---
 

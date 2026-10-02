@@ -34,15 +34,17 @@ The testing strategy provides multi-tiered verification across the complete soft
 
 ## 2. Test Suites Summary
 
-| Suite | File Location | Tests | Target Layer | Status |
+| Suite | File Location | Tests / Checks | Target Layer | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **Auth & Security** | `backend/tests/test_auth.js` | 18 | bcrypt hashing, JWT verification, role middleware (`USER`/`ADMIN`) | **PASSED** (100%) |
 | **Catalog & Relational** | `backend/tests/test_authors_books.js` | 28 | Book/Author CRUD, LEFT JOIN queries, pagination, availability filter | **PASSED** (100%) |
 | **Holds & Concurrency** | `backend/tests/test_reservations_transactions.js` | 17 | `SELECT ... FOR UPDATE`, race condition safety, issue/return transactions | **PASSED** (100%) |
 | **Error Handling & Validation** | `backend/tests/test_error_handling_validation.js` | 14 | Malformed JSON, 400 ID validation, 409 conflicts, error sanitization | **PASSED** (100%) |
 | **Comprehensive QA & Edge Cases** | `backend/tests/test_qa_comprehensive.js` | 18 | Case-insensitivity, whitespace trimming, SQL injection immunity, data privacy | **PASSED** (100%) |
+| **Database State & Invariants** | `backend/tests/verify_db_state.js` | 6 | Table structure, inventory bounds ($0 \le \text{available} \le \text{total}$) | **PASSED** (100%) |
+| **Phase 15 End-to-End Suite** | `backend/tests/test_phase15_e2e_verification.js` | 54 | Complete full-stack E2E verification across all subsystems | **PASSED** (100%) |
 | **Frontend Integration Suite** | `frontend/tests/test_frontend_integration.js` | 37 | End-to-end API integration, debounce, React state sync, dashboard UX | **PASSED** (100%) |
-| **Total Automated Tests** | **All 6 Suites** | **132** | **Full System Stack** | **100% PASS** |
+| **Total Automated Verification** | **All 8 Suites** | **192+** | **Full System Stack** | **100% PASS** |
 
 ---
 
