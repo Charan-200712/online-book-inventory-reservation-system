@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import bookService from '../services/bookService';
 import reservationService from '../services/reservationService';
 import BookSearch from '../components/BookSearch';
@@ -7,10 +7,13 @@ import Loading from '../components/Loading';
 import ErrorMessage from '../components/ErrorMessage';
 
 function Books() {
+  const [searchParams] = useSearchParams();
+  const initialAvailable = searchParams.get('available') === 'true' ? 'true' : 'all';
+
   // Controlled form & filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [availability, setAvailability] = useState('all');
+  const [availability, setAvailability] = useState(initialAvailable);
 
   // Async data & lifecycle states
   const [books, setBooks] = useState([]);

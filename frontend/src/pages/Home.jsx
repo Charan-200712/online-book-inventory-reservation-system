@@ -48,27 +48,32 @@ function Home() {
       </section>
 
       <section className="features-grid">
-        <div className="feature-card">
+        <Link to="/books" className="feature-card">
           <div className="feature-icon">📖</div>
           <h3>Inventory Tracking</h3>
           <p>
             Real-time tracking of total and available copies across computer science and engineering disciplines.
           </p>
-        </div>
-        <div className="feature-card">
+          <div className="feature-card-action">Browse Catalog &rarr;</div>
+        </Link>
+        <Link to="/books?available=true" className="feature-card">
           <div className="feature-icon">⚡</div>
           <h3>Instant Availability</h3>
           <p>
             Inspect whether physical copies are on shelf or currently checked out by departmental members.
           </p>
-        </div>
-        <div className="feature-card">
+          <div className="feature-card-action">View In-Stock Titles &rarr;</div>
+        </Link>
+        <Link to={isAuthenticated ? "/dashboard" : "/login"} className="feature-card">
           <div className="feature-icon">🔒</div>
           <h3>Secure Reservations</h3>
           <p>
             Guaranteed concurrency-safe holds that ensure you never lose a reserved copy to race conditions.
           </p>
-        </div>
+          <div className="feature-card-action">
+            {isAuthenticated ? "My Reservations &rarr;" : "Sign in to Reserve &rarr;"}
+          </div>
+        </Link>
       </section>
     </div>
   );
