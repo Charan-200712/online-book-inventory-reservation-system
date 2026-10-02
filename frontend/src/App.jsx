@@ -1,22 +1,70 @@
 import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import Navbar from './components/Navbar';
+import ProtectedRoute from './components/ProtectedRoute';
+
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Books from './pages/Books';
+import BookDetails from './pages/BookDetails';
+import Authors from './pages/Authors';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
-    <div className="app-container">
-      <header className="header">
-        <div className="badge">Phase 1: Project Setup & Architecture</div>
-      </header>
-      <main className="content">
-        <h1 className="title">Online Book Inventory &amp; Reservation System</h1>
-        <h2 className="subtitle">Departmental Library Management</h2>
-        <p className="description">
-          Search books, check availability, and manage reservations.
-        </p>
-      </main>
-      <footer className="footer">
-        <p>&copy; 2026 Departmental Library Management System</p>
-      </footer>
-    </div>
+    <AuthProvider>
+      <div className="app-layout">
+        <Navbar />
+
+        <main className="main-content">
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            {/* Protected authenticated routes */}
+            <Route
+              path="/books"
+              element={
+                <ProtectedRoute>
+                  <Books />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/books/:id"
+              element={
+                <ProtectedRoute>
+                  <BookDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/authors"
+              element={
+                <ProtectedRoute>
+                  <Authors />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 404 Fallback routes */}
+            <Route path="/404" element={<NotFound />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+
+        <footer className="footer">
+          <div className="footer-content">
+            <p>&copy; {new Date().getFullYear()} Online Book Inventory &amp; Reservation System</p>
+            <p className="footer-subtitle">Departmental Library Management</p>
+          </div>
+        </footer>
+      </div>
+    </AuthProvider>
   );
 }
 
