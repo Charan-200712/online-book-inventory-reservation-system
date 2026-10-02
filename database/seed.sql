@@ -26,10 +26,10 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- arun.kumar@college.edu   -> Student@123 (role: USER)
 -- -----------------------------------------------------------------------------
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `created_at`) VALUES
-(1, 'System Administrator', 'admin@library.edu', '$2b$10$w8T0M4j5J6k7L8m9N0o1P.qR2S3T4U5V6W7X8Y9Z0a1B2C3D4E5F6', 'ADMIN', NOW()),
-(2, 'Rahul Sharma', 'rahul.sharma@college.edu', '$2b$10$u1V2W3X4Y5Z6a7b8c9d0e.fG1H2I3J4K5L6M7N8O9P0Q1R2S3T4U5', 'USER', NOW()),
-(3, 'Priya Patel', 'priya.patel@college.edu', '$2b$10$z9Y8X7W6V5U4T3S2R1Q0P.oN1M2L3K4J5I6H7G8F9E0D1C2B3A4Z5', 'USER', NOW()),
-(4, 'Arun Kumar', 'arun.kumar@college.edu', '$2b$10$a1B2C3D4E5F6G7H8I9J0K.lM1N2O3P4Q5R6S7T8U9V0W1X2Y3Z4A5', 'USER', NOW());
+(1, 'System Administrator', 'admin@library.edu', '$2b$10$wyUhqpdxK6yoidHlsLuy0.XadBvvA8SzV0xuPP2BNdNGj8TgfkYAa', 'ADMIN', NOW()),
+(2, 'Rahul Sharma', 'rahul.sharma@college.edu', '$2b$10$60jLoI9gZoIghCpzItVd2.V15HToDSExb3vCdXQ.RV3j0egTW3a8e', 'USER', NOW()),
+(3, 'Priya Patel', 'priya.patel@college.edu', '$2b$10$60jLoI9gZoIghCpzItVd2.V15HToDSExb3vCdXQ.RV3j0egTW3a8e', 'USER', NOW()),
+(4, 'Arun Kumar', 'arun.kumar@college.edu', '$2b$10$60jLoI9gZoIghCpzItVd2.V15HToDSExb3vCdXQ.RV3j0egTW3a8e', 'USER', NOW());
 
 -- -----------------------------------------------------------------------------
 -- 2. Seed: authors (6 Authors)

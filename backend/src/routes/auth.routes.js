@@ -1,10 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const ApiResponse = require('../utils/ApiResponse');
+const authController = require('../controllers/auth.controller');
+const authenticate = require('../middleware/authMiddleware');
+const authorizeRoles = require('../middleware/roleMiddleware');
 
-// Placeholder for future Phase 4 Authentication & Authorization
-router.all('*', (req, res) => {
-  return ApiResponse.success(res, 'Endpoint not implemented yet');
-});
+// Public authentication routes
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+router.post('/logout', authController.logout);
+
+// Protected routes (requires valid JWT)
+router.get('/me', authenticate, authController.getMe);
+
+// Protected test route (requires valid JWT with ADMIN role)
+router.get('/admin-test', authenticate, authorizeRoles('ADMIN'), authController.adminTest);
 
 module.exports = router;
