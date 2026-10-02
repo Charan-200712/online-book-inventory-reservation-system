@@ -27,6 +27,8 @@ This directory contains the complete technical documentation, project reports, v
   *Compact reference table documenting all implemented endpoints, HTTP methods, access roles, query parameters, and status codes.*
 * [Final Project Submission Checklist](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/submission-checklist.md)  
   *Comprehensive readiness checklist covering Source Code, Database, Configuration, Testing, Git, and Presentation.*
+* [Release Checklist & Code Freeze Verification](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/release-checklist.md)  
+  *Formal release audit and code freeze sign-off across environment safety, database integrity, 192+ automated tests, build artifacts, and release readiness.*
 
 ### 4. Operations, Testing & Version Control
 * [Testing & Quality Assurance Guide](file:///c:/Users/chinn/OneDrive/Desktop/FSD_PROJECT/docs/testing.md)  
