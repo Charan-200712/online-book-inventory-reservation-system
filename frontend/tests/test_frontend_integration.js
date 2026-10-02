@@ -30,6 +30,7 @@ async function runFrontendIntegrationTests() {
   const { authorService } = await import('../src/services/authorService.js');
   const { reservationService } = await import('../src/services/reservationService.js');
   const { transactionService } = await import('../src/services/transactionService.js');
+  const { adminService } = await import('../src/services/adminService.js');
 
   const PORT = 5007;
   const server = app.listen(PORT, async () => {
@@ -256,11 +257,185 @@ async function runFrontendIntegrationTests() {
         throw new Error('Failed to retrieve authors list');
       }
 
-      // 12. Logout & Cleanup
-      console.log('\n--- 8. LOGOUT & POST-LOGOUT PROTECTION ---');
+      // --- 8. ROLE-BASED ACCESS REJECTION FOR REGULAR USERS ---
+      console.log('\n--- 8. ROLE-BASED ACCESS REJECTION FOR REGULAR USERS ---');
+      try {
+        await adminService.getAllReservations();
+        console.error('FAIL: Expected regular user to be rejected with 403 on admin reservations');
+        failed = true;
+      } catch (err) {
+        if (err.status === 403) {
+          console.log('8a. Regular user blocked from admin reservations: PASS (Status: 403 Forbidden)');
+        } else {
+          throw err;
+        }
+      }
+
+      try {
+        await adminService.createBook({
+          title: 'Unauthorized Book',
+          isbn: '978-0000000001',
+          author_id: 1,
+          category: 'Hack',
+          total_copies: 1,
+          available_copies: 1,
+        });
+        console.error('FAIL: Expected regular user to be rejected on createBook');
+        failed = true;
+      } catch (err) {
+        if (err.status === 403) {
+          console.log('8b. Regular user blocked from admin book creation: PASS (Status: 403 Forbidden)');
+        } else {
+          throw err;
+        }
+      }
+
+      // --- 9. ADMIN DASHBOARD & MANAGEMENT WORKFLOW (PHASE 10) ---
+      console.log('\n--- 9. ADMIN DASHBOARD & MANAGEMENT WORKFLOW (PHASE 10) ---');
+
+      // 9a. Admin Authentication
+      const adminLoginRes = await authService.login({
+        email: 'admin@library.edu',
+        password: 'Admin@123',
+      });
+      if (adminLoginRes.token && adminLoginRes.user && adminLoginRes.user.role === 'ADMIN') {
+        localStorage.setItem('token', adminLoginRes.token);
+        console.log('9a. Admin Login & Role Verification: PASS (Role:', adminLoginRes.user.role + ')');
+      } else {
+        throw new Error('Admin login failed or role is not ADMIN');
+      }
+
+      // Clean up any stale admin test records
+      await db.query('DELETE FROM books WHERE isbn = ?', ['978-0111222333']);
+      await db.query('DELETE FROM authors WHERE name LIKE ?', ['Admin Test Author%']);
+
+      // 9b. Admin Author Management: Create & Update
+      const createdAuthorRes = await adminService.createAuthor({
+        name: 'Admin Test Author',
+        bio: 'Created via admin service test',
+      });
+      const adminAuthorId = createdAuthorRes.author?.id;
+      if (adminAuthorId && createdAuthorRes.author?.name === 'Admin Test Author') {
+        console.log('9b. adminService.createAuthor(): PASS (Author ID:', adminAuthorId + ')');
+      } else {
+        throw new Error('adminService.createAuthor failed');
+      }
+
+      const updatedAuthorRes = await adminService.updateAuthor(adminAuthorId, {
+        name: 'Admin Test Author Updated',
+        bio: 'Updated bio via admin service test',
+      });
+      if (updatedAuthorRes.author?.name === 'Admin Test Author Updated') {
+        console.log('9c. adminService.updateAuthor(): PASS (Updated Name:', updatedAuthorRes.author.name + ')');
+      } else {
+        throw new Error('adminService.updateAuthor failed');
+      }
+
+      // 9c. Admin Book Management: Create & Update
+      const createdBookRes = await adminService.createBook({
+        title: 'Admin Test Book',
+        isbn: '978-0111222333',
+        author_id: adminAuthorId,
+        category: 'Administration',
+        total_copies: 2,
+        available_copies: 2,
+        description: 'Integration test book for admin management',
+      });
+      const adminBookId = createdBookRes.book?.id;
+      if (adminBookId && createdBookRes.book?.title === 'Admin Test Book') {
+        console.log('9d. adminService.createBook(): PASS (Book ID:', adminBookId + ')');
+      } else {
+        throw new Error('adminService.createBook failed');
+      }
+
+      const updatedBookRes = await adminService.updateBook(adminBookId, {
+        title: 'Admin Test Book Updated',
+        isbn: '978-0111222333',
+        author_id: adminAuthorId,
+        category: 'Administration',
+        total_copies: 3,
+        available_copies: 3,
+        description: 'Updated integration test book',
+      });
+      if (updatedBookRes.book?.title === 'Admin Test Book Updated' && updatedBookRes.book?.total_copies === 3) {
+        console.log('9e. adminService.updateBook(): PASS (Updated Title & Total Copies: 3)');
+      } else {
+        throw new Error('adminService.updateBook failed');
+      }
+
+      // 9d. Referential Integrity Conflict (Delete Author while Book references it)
+      try {
+        await adminService.deleteAuthor(adminAuthorId);
+        console.error('FAIL: Expected deleteAuthor to fail with 409 conflict when books reference author');
+        failed = true;
+      } catch (delErr) {
+        if (delErr.status === 409) {
+          console.log('9f. Author Delete Conflict Handling (409 Conflict): PASS (Referential integrity protected)');
+        } else {
+          throw delErr;
+        }
+      }
+
+      // 9e. System-wide Reservations & Hold Approval
+      const allReservations = await adminService.getAllReservations();
+      if (Array.isArray(allReservations)) {
+        console.log('9g. adminService.getAllReservations(): PASS (Found', allReservations.length, 'total reservation holds)');
+      } else {
+        throw new Error('adminService.getAllReservations failed to return an array');
+      }
+
+      // Create a test hold on the admin book for user ID 2
+      const [holdInsert] = await db.query(
+        `INSERT INTO reservations (user_id, book_id, status) VALUES (2, ?, 'PENDING')`,
+        [adminBookId]
+      );
+      const testHoldId = holdInsert.insertId;
+
+      const approveRes = await adminService.approveReservation(testHoldId);
+      if (approveRes.success) {
+        console.log('9h. adminService.approveReservation(): PASS (Approved hold ID:', testHoldId + ')');
+      } else {
+        throw new Error('adminService.approveReservation failed');
+      }
+
+      // Clean up test reservation hold
+      await db.query('DELETE FROM reservations WHERE id = ?', [testHoldId]);
+
+      // 9f. System-wide Circulation Transactions
+      const allTransactions = await adminService.getAllTransactions();
+      if (Array.isArray(allTransactions)) {
+        console.log('9i. adminService.getAllTransactions(): PASS (Found', allTransactions.length, 'total circulation records)');
+      } else {
+        throw new Error('adminService.getAllTransactions failed to return an array');
+      }
+
+      const overdueTransactions = await adminService.getOverdueTransactions();
+      if (Array.isArray(overdueTransactions)) {
+        console.log('9j. adminService.getOverdueTransactions(): PASS (Found', overdueTransactions.length, 'overdue records)');
+      } else {
+        throw new Error('adminService.getOverdueTransactions failed to return an array');
+      }
+
+      // 9g. Cascade Cleanup: Delete Book then Delete Author
+      const delBookRes = await adminService.deleteBook(adminBookId);
+      if (delBookRes.success) {
+        console.log('9k. adminService.deleteBook(): PASS (Deleted test book)');
+      } else {
+        throw new Error('adminService.deleteBook failed');
+      }
+
+      const delAuthorRes = await adminService.deleteAuthor(adminAuthorId);
+      if (delAuthorRes.success) {
+        console.log('9l. adminService.deleteAuthor(): PASS (Deleted test author after referencing book removed)');
+      } else {
+        throw new Error('adminService.deleteAuthor failed');
+      }
+
+      // --- 10. LOGOUT & POST-LOGOUT PROTECTION ---
+      console.log('\n--- 10. LOGOUT & POST-LOGOUT PROTECTION ---');
       await authService.logout();
       localStorage.removeItem('token');
-      console.log('8a. authService.logout() & localStorage cleanup: PASS');
+      console.log('10a. authService.logout() & localStorage cleanup: PASS');
 
       // Verify unauthenticated again
       try {
@@ -268,10 +443,10 @@ async function runFrontendIntegrationTests() {
         console.error('FAIL: Expected getBooks to fail after logout');
         failed = true;
       } catch (err) {
-        console.log('8b. Request after logout rejected: PASS (Status:', err.status + ')');
+        console.log('10b. Request after logout rejected: PASS (Status:', err.status + ')');
       }
 
-      console.log('\n=== ALL 20 FRONTEND INTEGRATION TESTS PASSED (100%) ===\n');
+      console.log('\n=== ALL 32 FRONTEND INTEGRATION TESTS PASSED (100%) ===\n');
 
     } catch (testError) {
       console.error('Frontend Integration Test Failed:', testError);

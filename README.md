@@ -27,7 +27,7 @@ A departmental library requires a web application to manage book stocks, search 
 * VS Code
 
 ## Current Phase
-Phase 9 — User Dashboard & Reservation Frontend (Complete)
+Phase 10 — Admin Dashboard & Management UI (Complete)
 
 ## Implemented & Planned Features
 * [x] Project architecture & Express setup (Phase 1)
@@ -40,7 +40,7 @@ Phase 9 — User Dashboard & Reservation Frontend (Complete)
 * [x] React frontend foundation, routing, JWT auth context & API integration (Phase 7)
 * [x] Live book search, controlled forms & useEffect synchronization (Phase 8)
 * [x] User dashboard, book reservations, self-cancellation & circulation history (Phase 9)
-* [ ] Administrator dashboard & circulation management (Phase 10+)
+* [x] Administrator dashboard & catalog/circulation management UI (Phase 10)
 
 ## Project Structure
 ```text
@@ -55,6 +55,7 @@ Phase 9 — User Dashboard & Reservation Frontend (Complete)
 │   │   ├── utils/
 │   │   ├── app.js
 │   │   └── server.js
+│   ├── tests/
 │   ├── .env.example
 │   ├── package.json
 │   └── README.md
@@ -65,10 +66,10 @@ Phase 9 — User Dashboard & Reservation Frontend (Complete)
 │   │   ├── hooks/
 │   │   ├── pages/
 │   │   ├── services/
-│   │   ├── utils/
 │   │   ├── App.jsx
 │   │   ├── index.css
 │   │   └── main.jsx
+│   ├── tests/
 │   ├── public/
 │   ├── index.html
 │   ├── package.json
@@ -87,6 +88,7 @@ Phase 9 — User Dashboard & Reservation Frontend (Complete)
 ### Prerequisites
 * Node.js (v18+ recommended)
 * npm
+* MySQL 8.0+
 
 ### Running Backend
 ```bash
@@ -104,3 +106,15 @@ npm install
 npm run dev
 ```
 Default URL: `http://localhost:5173`
+
+### Running Automated Test Suites
+- **Backend Tests**:
+  ```bash
+  cd backend
+  npm test
+  ```
+- **Frontend Integration Tests**:
+  ```bash
+  cd frontend
+  npm test
+  ```

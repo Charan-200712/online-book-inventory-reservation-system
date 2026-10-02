@@ -11,6 +11,7 @@ import Books from './pages/Books';
 import BookDetails from './pages/BookDetails';
 import Authors from './pages/Authors';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -56,6 +57,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requiredRole="ADMIN">
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />

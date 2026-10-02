@@ -48,6 +48,14 @@ function Navbar() {
               >
                 Dashboard
               </NavLink>
+              {user?.role === 'ADMIN' && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                >
+                  Admin
+                </NavLink>
+              )}
 
               <div className="nav-user-section">
                 <span className="user-greeting">

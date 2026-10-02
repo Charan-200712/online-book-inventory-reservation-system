@@ -7,8 +7,30 @@ Single-page React application built with Vite, React Router, React Hooks, and Co
 - **React Routing**: Centralized routing using React Router v6.
 - **Centralized API Client**: Custom fetch-based HTTP layer in `src/services/api.js` handling `Authorization: Bearer <token>` injection, JSON serialization, and error normalization.
 - **Authentication State**: Global `AuthContext` tracking user identity, token, authentication status, and session hydration from `localStorage` via `/api/auth/me`.
-- **Protected Routes**: `ProtectedRoute` wrapper guarding pages against unauthenticated access and redirecting to `/login` with location preservation.
-- **Controlled Forms**: `Login` and `Register` forms with client-side validation, password confirmation, disabled states, and clean error banners.
+- **Role-Based Protected Routes**:
+  - `ProtectedRoute` wrapper guarding pages against unauthenticated access (redirecting to `/login` with location state).
+  - Role-level enforcement: When `requiredRole="ADMIN"`, non-admin authenticated users (`USER`) are immediately redirected to `/dashboard`.
+- **Admin Dashboard & Management Control Panel (Phase 10)**:
+  - Accessible via `/admin` exclusively for `ADMIN` role users.
+  - Role-gated `Admin` navigation link in `Navbar.jsx`.
+  - Executive Overview metrics: Total Books, Total Authors, Pending Holds, and Active Loans.
+  - Tabbed interface switching between Books, Authors, System Reservations, and Circulation Audit.
+  - **Book Management**:
+    - Controlled modal `AdminBookForm` with dynamic author dropdown selector.
+    - Full CRUD: Add, Edit, Delete.
+    - Automatic referential conflict error handling (409 Conflict) when deleting books with active holds or loans.
+  - **Author Management**:
+    - Controlled modal `AdminAuthorForm` with validation.
+    - Full CRUD: Add, Edit, Delete.
+    - Integrity protection: Rejection banner when attempting to delete authors with associated catalog books.
+  - **System-Wide Reservation Holds**:
+    - Complete oversight table of all patron holds across the library.
+    - Displays Patron Name, Email, Book Title, Date Requested, and Status.
+    - One-click "Approve Hold" action for pending holds.
+  - **Circulation Transactions Audit**:
+    - Full circulation ledger with Borrower Info, Due Dates, and Return Dates.
+    - Visual status badges with immediate highlight for `OVERDUE` loans.
+- **Controlled Forms**: `Login`, `Register`, `AdminBookForm`, and `AdminAuthorForm` with client-side validation, password confirmation, disabled states, and clean error banners.
 - **Live Book Search & Debounce (Phase 8)**:
   - Real-time search across Title, ISBN, Author, and Category via `GET /api/books/search?q=...`.
   - 400ms debounce interval preventing keystroke query spam.
@@ -35,13 +57,16 @@ Single-page React application built with Vite, React Router, React Hooks, and Co
 ```text
 frontend/src/
 ├── components/
+│   ├── AdminAuthorForm.jsx    # Controlled modal form for adding/editing authors
+│   ├── AdminBookForm.jsx      # Controlled modal form with author dropdown for books
 │   ├── BookSearch.jsx         # Controlled search bar, clear button, & availability filter
 │   ├── ErrorMessage.jsx       # Alert banner with optional retry
 │   ├── Loading.jsx            # Accessible loading spinner
-│   ├── Navbar.jsx             # Auth-aware top navigation & role badges
-│   └── ProtectedRoute.jsx     # Route guard for authenticated pages
+│   ├── Navbar.jsx             # Auth-aware top navigation, role badges, & admin link
+│   └── ProtectedRoute.jsx     # Route guard with authentication & role-based checks
 │
 ├── pages/
+│   ├── AdminDashboard.jsx     # Admin control panel: Overview, Books, Authors, Holds, Circulation
 │   ├── Authors.jsx            # Authors directory
 │   ├── BookDetails.jsx        # Single book details, metadata & reservation action
 │   ├── Books.jsx              # Books catalog, live search, filter & direct reserve
@@ -52,6 +77,7 @@ frontend/src/
 │   └── Register.jsx           # Account registration
 │
 ├── services/
+│   ├── adminService.js        # Admin CRUD for books, authors, holds & transactions
 │   ├── api.js                 # Central fetch client & error handler
 │   ├── authService.js         # Login, register, logout, getCurrentUser
 │   ├── authorService.js       # Authors list & details API calls
@@ -63,7 +89,7 @@ frontend/src/
 │   └── AuthContext.jsx        # Authentication context provider & useAuth hook
 │
 ├── App.jsx                    # App layout, providers, and route tree
-├── index.css                  # Clean responsive styling & design tokens
+├── index.css                  # Responsive design tokens, admin dashboard & modal styles
 └── main.jsx                   # Application root with BrowserRouter
 ```
 
@@ -74,10 +100,11 @@ frontend/src/
 | `/` | Public | `Home` | System overview, hero presentation, and navigation |
 | `/login` | Public | `Login` | User authentication form |
 | `/register` | Public | `Register` | Member registration form |
-| `/books` | Protected | `Books` | Catalog listing with live search, stock filter, & hold reservations |
-| `/books/:id` | Protected | `BookDetails` | Detailed book view, author, description, & hold reservation |
-| `/authors` | Protected | `Authors` | Authors directory with biographies |
-| `/dashboard` | Protected | `Dashboard` | Member profile, active reservations, cancellation, & loan history |
+| `/books` | Protected (USER, ADMIN) | `Books` | Catalog listing with live search, stock filter, & hold reservations |
+| `/books/:id` | Protected (USER, ADMIN) | `BookDetails` | Detailed book view, author, description, & hold reservation |
+| `/authors` | Protected (USER, ADMIN) | `Authors` | Authors directory with biographies |
+| `/dashboard` | Protected (USER, ADMIN) | `Dashboard` | Member profile, active reservations, cancellation, & loan history |
+| `/admin` | Protected (ADMIN only) | `AdminDashboard` | Administrator console: stats, catalog CRUD, hold approval, & circulation audit |
 | `/404` or `*` | Public | `NotFound` | Friendly 404 page |
 
 ## Environment Configuration
@@ -98,13 +125,13 @@ npm run dev
 ```
 Default local URL: `http://localhost:5173`
 
-### 2. Integration Tests
-```bash
-npm test
-```
-
-### 3. Production Build
+### 2. Production Build
 ```bash
 npm run build
 ```
-Production build assets are compiled into `frontend/dist/`.
+
+### 3. Running Integration Tests
+```bash
+npm test
+```
+Runs the automated 32-test frontend integration suite covering authentication, role gates, search, filters, user dashboard, admin catalog CRUD, hold approvals, and circulation queries.
