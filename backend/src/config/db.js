@@ -14,4 +14,23 @@ const pool = mysql.createPool({
   keepAliveInitialDelay: 0
 });
 
+/**
+ * Tests database connectivity using the connection pool.
+ * Properly acquires and releases a connection.
+ *
+ * @returns {Promise<{ connected: boolean, message: string }>}
+ */
+pool.testConnection = async () => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.query('SELECT 1 AS health');
+    return {
+      connected: true,
+      message: 'Database connection pool established successfully'
+    };
+  } finally {
+    connection.release();
+  }
+};
+
 module.exports = pool;
