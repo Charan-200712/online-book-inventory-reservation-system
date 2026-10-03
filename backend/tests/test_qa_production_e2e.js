@@ -13,8 +13,10 @@
  */
 
 const http = require('http');
+const app = require('../src/app');
 
-const API_BASE = 'http://localhost:5000/api';
+let server = null;
+let API_BASE = 'http://localhost:5000/api';
 
 // Helper to make HTTP requests
 function request(method, path, body = null, token = null) {
@@ -85,6 +87,20 @@ async function runQaTestSuite() {
   console.log('================================================================');
   console.log('   STARTING PRODUCTION QA END-TO-END VERIFICATION SUITE       ');
   console.log('================================================================\n');
+
+  // Check if server is already running on port 5000, otherwise start ephemeral server
+  try {
+    await request('GET', '/health');
+  } catch (err) {
+    await new Promise((resolve) => {
+      server = app.listen(0, () => {
+        const port = server.address().port;
+        API_BASE = `http://127.0.0.1:${port}/api`;
+        console.log(`[QA SERVER] Ephemeral backend started on ${API_BASE}\n`);
+        resolve();
+      });
+    });
+  }
 
   let studentToken = null;
   let adminToken = null;
@@ -606,6 +622,10 @@ async function runQaTestSuite() {
   console.log(`PASSED                   : ${passedTests} (100%)`);
   console.log(`FAILED                   : ${failedTests} (0%)`);
 
+  if (server) {
+    server.close();
+  }
+
   if (failedTests > 0) {
     console.error('\nFAILED TEST BREAKDOWN:');
     testResults
@@ -619,6 +639,9 @@ async function runQaTestSuite() {
 }
 
 runQaTestSuite().catch((err) => {
+  if (server) {
+    server.close();
+  }
   console.error('Fatal QA Suite Error:', err);
   process.exit(1);
 });

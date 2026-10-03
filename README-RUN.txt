@@ -17,17 +17,23 @@ HOW TO START THE APPLICATION (ONE-CLICK)
        database/schema.sql
        database/seed.sql (for initial test accounts and books)
 
-2. Double-click "start-project.bat" in this root project folder.
+2. START OPTIONS (Choose any ONE):
 
-3. Two separate Command Prompt windows will automatically open:
-   - Window 1: Backend API server running 'npm run dev' on port 5000
-   - Window 2: Frontend Vite server running 'npm run dev' on port 5173
+   Option A - Double-Click Launcher (Recommended for Windows):
+     Double-click "start-project.bat" (or "start project.bat") in this folder.
+     - Automatically checks and frees ports 5000 and 5173.
+     - Starts both the Backend and Frontend servers.
+     - Automatically launches your default web browser to http://localhost:5173/.
 
-4. Open your web browser and navigate to:
-   http://localhost:5173/
+   Option B - From Terminal / Command Prompt:
+     Open a terminal in this root folder and type:
+       npm start
+     (or 'npm run dev')
+     This executes the unified launcher that starts both servers and opens the browser.
 
-5. To check backend health status:
-   http://localhost:5000/api/health
+   Option C - Inside VS Code:
+     Press Ctrl+Shift+P -> "Tasks: Run Task" -> "Start Project (Full Stack)",
+     or click "start" under the NPM SCRIPTS panel in the VS Code sidebar.
 
 -------------------------------------------------------------------------------
 DEFAULT SEEDED TEST ACCOUNTS
@@ -45,6 +51,6 @@ DEFAULT SEEDED TEST ACCOUNTS
 HOW TO STOP THE APPLICATION
 -------------------------------------------------------------------------------
 
-To stop both services:
-  Simply close the two Command Prompt windows (or press Ctrl + C in each window).
+  - Double-click "stop-project.bat" (or "stop project.bat").
+  - Or if running in terminal via 'npm start', press Ctrl + C.
 ===============================================================================
