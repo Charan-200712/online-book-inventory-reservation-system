@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationCenter from './NotificationCenter';
 
 function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -8,25 +9,18 @@ function Navbar() {
   const location = useLocation();
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-
   const userMenuRef = useRef(null);
-  const notifRef = useRef(null);
 
-  // Close dropdowns on route changes
+  // Close dropdown on route changes
   useEffect(() => {
     setUserMenuOpen(false);
-    setNotificationsOpen(false);
   }, [location.pathname]);
 
-  // Click outside listener for dropdowns
+  // Click outside listener for user dropdown menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setUserMenuOpen(false);
-      }
-      if (notifRef.current && !notifRef.current.contains(event.target)) {
-        setNotificationsOpen(false);
       }
     };
 
@@ -97,47 +91,8 @@ function Navbar() {
         <div className="navbar-right">
           {isAuthenticated ? (
             <>
-              {/* Notification Bell */}
-              <div className="notification-trigger-wrap" ref={notifRef}>
-                <button
-                  type="button"
-                  className="notification-btn"
-                  onClick={() => {
-                    setNotificationsOpen((prev) => !prev);
-                    setUserMenuOpen(false);
-                  }}
-                  aria-label="View notifications"
-                  title="Notifications"
-                >
-                  🔔
-                  <span className="notification-badge">2</span>
-                </button>
-
-                {notificationsOpen && (
-                  <div className="notification-popover" role="dialog" aria-label="Notifications panel">
-                    <div className="notification-popover-header">
-                      <h4>Library Notifications</h4>
-                      <span className="badge badge-in-stock">2 New</span>
-                    </div>
-                    <div className="notification-list">
-                      <div className="notification-item">
-                        <span className="notification-item-icon">📑</span>
-                        <div>
-                          <strong>Hold Reservation</strong>
-                          <p>Reservations are held for pickup upon admin approval.</p>
-                        </div>
-                      </div>
-                      <div className="notification-item">
-                        <span className="notification-item-icon">⏳</span>
-                        <div>
-                          <strong>Circulation Policy</strong>
-                          <p>Standard student loan period is 14 days from checkout date.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Notification Center */}
+              <NotificationCenter />
 
               {/* User Avatar, Name & Dropdown */}
               <div className="user-menu-wrap" ref={userMenuRef}>
