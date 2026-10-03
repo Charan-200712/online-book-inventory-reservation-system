@@ -111,18 +111,16 @@ function launch() {
   freePorts();
 
   console.log('[1/2] Starting Backend API Server (Port 5000)...');
-  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-
-  const backendProcess = spawn(npmCmd, ['run', 'dev'], {
+  const backendProcess = spawn('npm run dev', {
     cwd: BACKEND_DIR,
-    shell: false,
+    shell: true,
     stdio: 'inherit'
   });
 
   console.log('[2/2] Starting Frontend Vite Server (Port 5173)...');
-  const frontendProcess = spawn(npmCmd, ['run', 'dev'], {
+  const frontendProcess = spawn('npm run dev', {
     cwd: FRONTEND_DIR,
-    shell: false,
+    shell: true,
     stdio: 'inherit'
   });
 
