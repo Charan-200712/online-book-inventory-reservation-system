@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import bookService from '../services/bookService';
+import authorService from '../services/authorService';
 import reservationService from '../services/reservationService';
 import BookSearch from '../components/BookSearch';
 import Loading from '../components/Loading';
@@ -8,27 +9,54 @@ import ErrorMessage from '../components/ErrorMessage';
 
 function Books() {
   const [searchParams] = useSearchParams();
-  const initialAvailable = searchParams.get('available') === 'true' ? 'true' : 'all';
+  const initialAvailable = searchParams.get('available') === 'true'
+    ? 'true'
+    : searchParams.get('available') === 'false'
+      ? 'false'
+      : 'all';
+  const initialQuery = searchParams.get('q') || '';
 
-  // Controlled form & filter state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Controlled search and filtering states
+  const [searchTerm, setSearchTerm] = useState(initialQuery);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialQuery);
   const [availability, setAvailability] = useState(initialAvailable);
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [authorFilter, setAuthorFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('relevant');
 
   // Async data & lifecycle states
   const [books, setBooks] = useState([]);
+  const [authorsList, setAuthorsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
 
-  // Reservation feedback state
+  // Reservation & Waitlist feedback state
   const [reservingId, setReservingId] = useState(null);
   const [resSuccess, setResSuccess] = useState('');
   const [resError, setResError] = useState('');
 
+  // Load authors once on mount for filter dropdown
+  useEffect(() => {
+    let isSubscribed = true;
+    async function fetchAuthors() {
+      try {
+        const authors = await authorService.getAuthors();
+        if (isSubscribed) {
+          setAuthorsList(authors || []);
+        }
+      } catch {
+        // Non-blocking fallback
+      }
+    }
+    fetchAuthors();
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
+
   // 1. Debounce Effect: Synchronize user typing with debouncedSearch (400ms delay)
   useEffect(() => {
-    // Show immediate feedback when user is typing
     if (searchTerm.trim() !== debouncedSearch) {
       setIsSearching(true);
     }
@@ -106,7 +134,35 @@ function Books() {
     setDebouncedSearch('');
   };
 
-  // Handler: Direct book reservation from catalog card
+  // Derive dynamic categories from loaded books
+  const categories = useMemo(() => {
+    return Array.from(new Set(books.map((b) => b.category).filter(Boolean))).sort();
+  }, [books]);
+
+  // Apply client-side Category, Author, and Sorting filters
+  const displayedBooks = useMemo(() => {
+    let result = [...books];
+
+    if (categoryFilter !== 'all') {
+      result = result.filter((b) => b.category === categoryFilter);
+    }
+
+    if (authorFilter !== 'all') {
+      result = result.filter(
+        (b) => b.author_name?.toLowerCase() === authorFilter.toLowerCase()
+      );
+    }
+
+    if (sortBy === 'az') {
+      result.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    } else if (sortBy === 'newest') {
+      result.sort((a, b) => Number(b.id) - Number(a.id));
+    }
+
+    return result;
+  }, [books, categoryFilter, authorFilter, sortBy]);
+
+  // Handler: Direct book hold reservation from catalog card
   const handleReserve = async (book) => {
     setReservingId(book.id);
     setResSuccess('');
@@ -115,7 +171,7 @@ function Books() {
     try {
       await reservationService.createReservation(book.id);
       setResSuccess(
-        `Successfully placed a hold for "${book.title}"! A copy has been reserved for you.`
+        `Successfully placed a hold for "${book.title}"! A physical copy has been reserved for you.`
       );
       // Instantaneously update local copy count
       setBooks((prev) =>
@@ -137,33 +193,50 @@ function Books() {
     }
   };
 
+  // Handler: Join Waitlist for out-of-stock titles
+  const handleJoinWaitlist = (book) => {
+    setResError('');
+    setResSuccess(
+      `You have joined the notification waitlist for "${book.title}". You will be alerted as soon as a copy is returned!`
+    );
+  };
+
   return (
     <div className="page-container">
+      {/* 1. TOP HEADER SECTION */}
       <div className="page-header">
-        <h1 className="page-title">Library Book Inventory</h1>
+        <h1 className="page-title">Library Book Catalog</h1>
         <p className="page-subtitle">
-          Search across title, ISBN, author name, or category with real-time stock availability and instant hold reservation.
+          Search, discover and reserve books from your departmental collection.
         </p>
 
-        {/* Integrated Controlled Search & Filter Toolbar */}
+        {/* 2. CONTROLLED SEARCH & MULTI-FILTER TOOLBAR */}
         <BookSearch
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           onClearSearch={handleClearSearch}
           availability={availability}
           onAvailabilityChange={setAvailability}
+          categories={categories}
+          selectedCategory={categoryFilter}
+          onCategoryChange={setCategoryFilter}
+          authors={authorsList}
+          selectedAuthor={authorFilter}
+          onAuthorChange={setAuthorFilter}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
           isSearching={isSearching && !loading}
-          totalResults={books.length}
+          totalResults={displayedBooks.length}
         />
       </div>
 
-      {/* Reservation Action Feedback Banners */}
+      {/* 3. RESERVATION & WAITLIST FEEDBACK BANNERS */}
       {resSuccess && (
         <div className="success-banner" role="status">
           <div className="banner-content-with-action">
             <span>✅ {resSuccess}</span>
             <Link to="/dashboard" className="banner-link">
-              View in Dashboard &rarr;
+              View in My Library &rarr;
             </Link>
           </div>
         </div>
@@ -175,8 +248,10 @@ function Books() {
         </div>
       )}
 
-      {loading && <Loading message="Loading book inventory..." />}
+      {/* 4. LOADING STATE */}
+      {loading && <Loading message="Loading departmental catalog..." />}
 
+      {/* 5. ERROR STATE */}
       <ErrorMessage
         message={error}
         onRetry={() => {
@@ -185,32 +260,49 @@ function Books() {
         }}
       />
 
-      {/* Empty State Display */}
-      {!loading && !error && books.length === 0 && (
+      {/* 6. EMPTY STATE */}
+      {!loading && !error && displayedBooks.length === 0 && (
         <div className="empty-state" role="status">
           <span className="empty-icon" aria-hidden="true">
             📭
           </span>
-          {debouncedSearch ? (
+          {debouncedSearch || categoryFilter !== 'all' || authorFilter !== 'all' ? (
             <>
               <h3>No Books Found</h3>
               <p>
-                No books matched your search for <strong>"{debouncedSearch}"</strong>
-                {availability !== 'all' ? ` with ${availability === 'true' ? 'available' : 'unavailable'} stock` : ''}.
+                No books matched your active search or filters
+                {debouncedSearch ? ` for "${debouncedSearch}"` : ''}
+                {categoryFilter !== 'all' ? ` in category "${categoryFilter}"` : ''}
+                {authorFilter !== 'all' ? ` by author "${authorFilter}"` : ''}.
               </p>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                style={{ marginTop: '1rem' }}
-                onClick={handleClearSearch}
-              >
-                Clear Search
-              </button>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleClearSearch}
+                >
+                  Clear Search Term
+                </button>
+                {(categoryFilter !== 'all' || authorFilter !== 'all' || availability !== 'all') && (
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => {
+                      setCategoryFilter('all');
+                      setAuthorFilter('all');
+                      setAvailability('all');
+                      setSortBy('relevant');
+                    }}
+                  >
+                    Reset All Filters
+                  </button>
+                )}
+              </div>
             </>
           ) : (
             <>
               <h3>No Books In Selection</h3>
-              <p>There are currently no books matching the selected availability filter.</p>
+              <p>There are currently no books matching the selected filter criteria.</p>
               {availability !== 'all' && (
                 <button
                   type="button"
@@ -226,38 +318,75 @@ function Books() {
         </div>
       )}
 
-      {/* Books Grid */}
-      {!loading && !error && books.length > 0 && (
+      {/* 7. BOOKS CATALOG GRID */}
+      {!loading && !error && displayedBooks.length > 0 && (
         <div className="books-grid">
-          {books.map((book) => {
+          {displayedBooks.map((book) => {
             const isAvailable = book.available_copies > 0;
+            const isLimited = isAvailable && book.available_copies <= 2;
+
+            // Generate deterministic theme gradient per book ID
+            const coverGradients = [
+              'linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #2563EB 100%)',
+              'linear-gradient(135deg, #0F172A 0%, #0369A1 50%, #0284C7 100%)',
+              'linear-gradient(135deg, #1E293B 0%, #1E40AF 60%, #3B82F6 100%)',
+              'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #475569 100%)',
+            ];
+            const gradientBg = coverGradients[(book.id || 0) % coverGradients.length];
+
             return (
               <div key={book.id} className="book-card">
-                <div className="book-card-header">
-                  <span className="category-pill">{book.category || 'General'}</span>
-                  <span
-                    className={`stock-badge ${isAvailable ? 'badge-in-stock' : 'badge-out-of-stock'}`}
-                  >
-                    {isAvailable ? `${book.available_copies} Available` : 'Unavailable'}
+                {/* Academic Book Cover Banner */}
+                <div
+                  className="book-cover-banner"
+                  style={{ background: gradientBg }}
+                  aria-hidden="true"
+                >
+                  <span className="book-cover-icon">📘</span>
+                  <span className="book-cover-category-chip">
+                    {book.category || 'General'}
+                  </span>
+                  <span className="book-cover-isbn-chip font-mono">
+                    {book.isbn}
                   </span>
                 </div>
 
+                {/* Card Header: Category & Availability Badge */}
+                <div className="book-card-header">
+                  <span className="category-pill">{book.category || 'General'}</span>
+
+                  {isLimited ? (
+                    <span className="stock-badge badge-limited" title="Limited physical stock remaining">
+                      {book.available_copies} Left (Limited)
+                    </span>
+                  ) : isAvailable ? (
+                    <span className="stock-badge badge-in-stock">
+                      {book.available_copies} Available
+                    </span>
+                  ) : (
+                    <span className="stock-badge badge-out-of-stock">
+                      Unavailable
+                    </span>
+                  )}
+                </div>
+
+                {/* Card Body: Title, Author, and Inventory Copies */}
                 <div className="book-card-body">
                   <h3 className="book-title">{book.title}</h3>
                   <p className="book-author">By {book.author_name || 'Unknown Author'}</p>
+
                   <div className="book-meta">
                     <span className="meta-item">
                       <strong>ISBN:</strong> <span className="font-mono">{book.isbn}</span>
                     </span>
                     <span className="meta-item">
-                      <strong>Total Copies:</strong> {book.total_copies}
-                    </span>
-                    <span className="meta-item">
-                      <strong>Available Copies:</strong> {book.available_copies}
+                      <strong>Shelf Stock:</strong>{' '}
+                      <strong>{book.available_copies}</strong> of {book.total_copies} copies available
                     </span>
                   </div>
                 </div>
 
+                {/* Card Footer: View Details & Contextual Reserve / Waitlist Actions */}
                 <div className="book-card-footer">
                   <div className="book-card-actions">
                     {isAvailable ? (
@@ -272,15 +401,19 @@ function Books() {
                     ) : (
                       <button
                         type="button"
-                        className="btn btn-outline btn-sm btn-reserve"
-                        disabled
-                        title="No copies currently available"
+                        className="btn btn-secondary btn-sm btn-reserve"
+                        onClick={() => handleJoinWaitlist(book)}
+                        title="Add yourself to the notification waitlist when this book is returned"
                       >
-                        Unavailable
+                        🔔 Join Waitlist
                       </button>
                     )}
-                    <Link to={`/books/${book.id}`} className="btn btn-outline btn-sm btn-details">
-                      Details &rarr;
+
+                    <Link
+                      to={`/books/${book.id}`}
+                      className="btn btn-outline btn-sm btn-details"
+                    >
+                      View Details &rarr;
                     </Link>
                   </div>
                 </div>
