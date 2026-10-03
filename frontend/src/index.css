@@ -1412,92 +1412,373 @@ body {
 }
 
 /* ==========================================================================
-   Book Details Page
+   Book Details Page (Modern Academic Navy Experience)
    ========================================================================== */
-.book-details-card {
-  padding: 2.25rem;
+.book-details-page {
+  gap: 2rem;
 }
 
-.details-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1.5rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1.5rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.details-title-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.details-title {
-  font-size: 1.85rem;
-  font-weight: 800;
-  color: var(--navy);
-  letter-spacing: -0.02em;
-}
-
-.details-author {
-  font-size: 1rem;
-  color: var(--text-secondary);
-}
-
-.details-grid {
+.academic-details-container {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 280px 1fr;
   gap: 2.5rem;
+  padding: 2.5rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
-@media (max-width: 860px) {
-  .details-grid {
+@media (max-width: 920px) {
+  .academic-details-container {
     grid-template-columns: 1fr;
-    gap: 1.75rem;
+    gap: 2rem;
+    padding: 1.75rem;
   }
 }
 
-.details-main h3,
-.details-sidebar h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--navy);
-  margin-bottom: 0.85rem;
+/* Left Column: Academic Book Cover Mockup */
+.details-cover-column {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
-.book-description {
+.premium-book-cover {
+  width: 100%;
+  max-width: 280px;
+  min-height: 400px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, #0F172A 0%, #1E3A8A 55%, #2563EB 100%);
+  box-shadow: inset 4px 0 10px rgba(0, 0, 0, 0.4), 0 12px 28px -6px rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.75rem 1.5rem;
+  color: #FFFFFF;
+  overflow: hidden;
+}
+
+.cover-spine-effect {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0%, rgba(255, 255, 255, 0.15) 60%, rgba(0, 0, 0, 0.3) 100%);
+  z-index: 1;
+}
+
+.cover-ribbon {
+  position: absolute;
+  top: 14px;
+  right: -32px;
+  background: #D97706;
+  color: #FFFFFF;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 4px 34px;
+  transform: rotate(45deg);
+  letter-spacing: 0.06em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  z-index: 3;
+}
+
+.cover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 2;
+}
+
+.cover-department-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+  max-width: 170px;
+  line-height: 1.3;
+}
+
+.cover-icon {
+  font-size: 1.85rem;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.cover-center {
+  z-index: 2;
+  margin: 1.75rem 0;
+}
+
+.cover-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.3;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  letter-spacing: -0.01em;
+}
+
+.cover-author {
+  font-size: 0.875rem;
+  color: #93C5FD;
+  margin-top: 0.65rem;
+  font-weight: 500;
+}
+
+.cover-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding-top: 0.75rem;
+}
+
+.cover-category-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(15, 23, 42, 0.65);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.cover-isbn {
+  font-size: 0.68rem;
+  opacity: 0.8;
+}
+
+/* Right Column: Book Details & Actions */
+.details-content-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.details-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.details-category-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.details-title {
+  font-size: 2.15rem;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.details-author-sub {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+}
+
+.details-meta-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+.meta-pill {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.825rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.meta-pill-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.meta-pill-value {
+  color: var(--navy);
+  font-weight: 600;
+}
+
+/* Availability Card */
+.availability-card {
+  background-color: var(--bg-page);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  box-shadow: var(--shadow-xs);
+}
+
+.availability-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.65rem;
+}
+
+.availability-card-header h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.availability-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .availability-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-metric-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.text-success {
+  color: var(--success);
+}
+
+.text-warning {
+  color: var(--warning);
+}
+
+.availability-meter-wrap {
+  height: 6px;
+  background-color: var(--border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.availability-meter-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--success) 100%);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.details-actions-row {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 600px) {
+  .details-actions-row {
+    flex-direction: column;
+  }
+  .details-actions-row .btn {
+    width: 100%;
+  }
+}
+
+/* Lower Section: About & Volume Details */
+.details-lower-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1.75rem;
+}
+
+@media (max-width: 860px) {
+  .details-lower-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.details-card-sub {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.sub-heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.65rem;
+}
+
+.book-description-text {
   font-size: 0.95rem;
   color: var(--text-secondary);
   line-height: 1.7;
 }
 
-.info-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  margin-bottom: 1.5rem;
+.volume-details-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
 }
 
-.info-list li {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.875rem;
-  padding: 0.4rem 0;
+.volume-details-table tr {
   border-bottom: 1px solid var(--border);
 }
 
-.info-label {
-  color: var(--text-secondary);
+.volume-details-table tr:last-child {
+  border-bottom: none;
 }
 
-.info-value {
-  font-weight: 600;
+.volume-details-table th {
+  text-align: left;
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: 0.65rem 0;
+  width: 45%;
+}
+
+.volume-details-table td {
   color: var(--navy);
+  font-weight: 600;
+  padding: 0.65rem 0;
+  text-align: right;
 }
 
 /* ==========================================================================

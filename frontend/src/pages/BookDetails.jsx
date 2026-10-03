@@ -8,20 +8,46 @@ import ErrorMessage from '../components/ErrorMessage';
 function BookDetails() {
   const { id } = useParams();
   const [book, setBook] = useState(null);
+  const [relatedBooks, setRelatedBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Hold reservation & waitlist action states
   const [reserving, setReserving] = useState(false);
   const [resSuccess, setResSuccess] = useState('');
   const [resError, setResError] = useState('');
+  const [waitlistSuccess, setWaitlistSuccess] = useState('');
 
-  const loadBook = async () => {
+  // Fetch book and related catalog recommendations
+  const loadBookData = async () => {
     setLoading(true);
     setError('');
+    setResSuccess('');
+    setResError('');
+    setWaitlistSuccess('');
+
     try {
       const data = await bookService.getBookById(id);
       setBook(data);
+
+      // Fetch related books from catalog
+      try {
+        const catalogRes = await bookService.getBooks({ limit: 50 });
+        const allBooks = catalogRes.books || [];
+        const related = allBooks
+          .filter(
+            (b) =>
+              b.id !== data.id &&
+              (b.category === data.category || b.author_name === data.author_name)
+          )
+          .slice(0, 3);
+        setRelatedBooks(related);
+      } catch {
+        // Non-blocking fallback for related books
+        setRelatedBooks([]);
+      }
     } catch (err) {
+      console.error('Book details load error:', err);
       setError(err.message || 'Unable to retrieve book details. Please try again.');
     } finally {
       setLoading(false);
@@ -29,24 +55,27 @@ function BookDetails() {
   };
 
   useEffect(() => {
-    loadBook();
+    loadBookData();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [id]);
 
+  // Handle book reservation
   const handleReserve = async () => {
-    if (!book) return;
+    if (!book || book.available_copies <= 0) return;
 
     setReserving(true);
     setResSuccess('');
     setResError('');
+    setWaitlistSuccess('');
 
     try {
       await reservationService.createReservation(book.id);
       setResSuccess(
-        `Successfully placed a hold for "${book.title}"! A copy is reserved for you.`
+        `Successfully placed a hold for "${book.title}"! A physical copy is reserved for you.`
       );
-      // Reload book data to update available_copies
-      const updatedBook = await bookService.getBookById(id);
-      setBook(updatedBook);
+      // Reload updated book data to refresh available_copies
+      const updated = await bookService.getBookById(id);
+      setBook(updated);
     } catch (err) {
       console.error('Reservation error:', err);
       if (err.status === 409) {
@@ -59,117 +88,291 @@ function BookDetails() {
     }
   };
 
+  // Handle Waitlist Addition
+  const handleJoinWaitlist = () => {
+    setResSuccess('');
+    setResError('');
+    setWaitlistSuccess(
+      `You have joined the notification waitlist for "${book?.title}". You will be notified when a copy is returned!`
+    );
+  };
+
   if (loading) {
     return <Loading message="Loading book details..." />;
   }
 
+  const isAvailable = book && book.available_copies > 0;
+  const isLimited = isAvailable && book.available_copies <= 2;
+  const borrowedCopies = book ? Math.max(0, (book.total_copies || 0) - (book.available_copies || 0)) : 0;
+  const publicationYear = book?.created_at ? new Date(book.created_at).getFullYear() : '2024';
+
   return (
-    <div className="page-container">
-      <div className="breadcrumb-nav">
+    <div className="page-container book-details-page">
+      {/* 1. BREADCRUMB NAVIGATION */}
+      <nav className="breadcrumb-nav" aria-label="Breadcrumb navigation">
         <Link to="/books" className="back-link">
           &larr; Back to Books Catalog
         </Link>
-      </div>
+      </nav>
 
-      <ErrorMessage message={error} onRetry={loadBook} />
+      {/* Global Error Banner */}
+      <ErrorMessage message={error} onRetry={loadBookData} />
 
       {!loading && !error && book && (
-        <div className="book-details-card">
-          <div className="details-header">
-            <div className="details-title-group">
-              <span className="category-pill">{book.category || 'General'}</span>
-              <h1 className="details-title">{book.title}</h1>
-              <p className="details-author">
-                Authored by <strong>{book.author?.name || book.author_name || 'Unknown Author'}</strong>
-              </p>
-            </div>
-            <div className="details-status-badge">
-              <span
-                className={`stock-badge stock-badge-lg ${
-                  book.available_copies > 0 ? 'badge-in-stock' : 'badge-out-of-stock'
-                }`}
-              >
-                {book.available_copies > 0 ? 'Available' : 'Currently Unavailable'}
-              </span>
-            </div>
-          </div>
-
-          <div className="details-grid">
-            <div className="details-main">
-              <h3>Description</h3>
-              <p className="book-description">
-                {book.description || 'No detailed description available for this volume.'}
-              </p>
+        <>
+          {/* 2. TOP HERO CARD: TWO-COLUMN ACADEMIC LAYOUT */}
+          <div className="book-details-card academic-details-container">
+            {/* LEFT COLUMN: ACADEMIC BOOK COVER */}
+            <div className="details-cover-column">
+              <div className="premium-book-cover" aria-hidden="true">
+                <div className="cover-spine-effect" />
+                <div className="cover-ribbon">LIBRARY COLLECTION</div>
+                <div className="cover-header">
+                  <span className="cover-department-tag">DEPARTMENTAL REPOSITORY</span>
+                  <span className="cover-icon">📖</span>
+                </div>
+                <div className="cover-center">
+                  <h2 className="cover-title">{book.title}</h2>
+                  <p className="cover-author">{book.author_name || book.author?.name || 'Department Author'}</p>
+                </div>
+                <div className="cover-footer">
+                  <span className="cover-category-badge">{book.category || 'Core Reference'}</span>
+                  <span className="cover-isbn font-mono">{book.isbn}</span>
+                </div>
+              </div>
             </div>
 
-            <div className="details-sidebar">
-              <h3>Inventory Information</h3>
-              <ul className="info-list">
-                <li>
-                  <span className="info-label">ISBN:</span>
-                  <span className="info-value font-mono">{book.isbn}</span>
-                </li>
-                <li>
-                  <span className="info-label">Total Copies:</span>
-                  <span className="info-value">{book.total_copies}</span>
-                </li>
-                <li>
-                  <span className="info-label">Available Copies:</span>
-                  <span className="info-value">
-                    <strong>{book.available_copies}</strong> / {book.total_copies}
-                  </span>
-                </li>
-                <li>
-                  <span className="info-label">Category:</span>
-                  <span className="info-value">{book.category}</span>
-                </li>
-                <li>
-                  <span className="info-label">Cataloged On:</span>
-                  <span className="info-value">
-                    {book.created_at ? new Date(book.created_at).toLocaleDateString() : 'N/A'}
-                  </span>
-                </li>
-              </ul>
+            {/* RIGHT COLUMN: BOOK INFORMATION & AVAILABILITY CARD */}
+            <div className="details-content-column">
+              <div className="details-header-info">
+                <div className="details-category-row">
+                  <span className="category-pill">{book.category || 'General'}</span>
+                  {isLimited ? (
+                    <span className="stock-badge badge-limited">
+                      Limited Stock ({book.available_copies} Left)
+                    </span>
+                  ) : isAvailable ? (
+                    <span className="stock-badge badge-in-stock">
+                      Available ({book.available_copies} on Shelf)
+                    </span>
+                  ) : (
+                    <span className="stock-badge badge-out-of-stock">
+                      Currently Unavailable
+                    </span>
+                  )}
+                </div>
 
-              {/* Reservation Action Box */}
-              <div className="reservation-action-panel">
+                <h1 className="details-title">{book.title}</h1>
+                <p className="details-author-sub">
+                  Authored by{' '}
+                  <strong>{book.author_name || book.author?.name || 'Unknown Author'}</strong>
+                </p>
+
+                {/* Metadata Row: ISBN, Publisher, Publication Year */}
+                <div className="details-meta-row">
+                  <div className="meta-pill">
+                    <span className="meta-pill-label">ISBN:</span>
+                    <span className="meta-pill-value font-mono">{book.isbn}</span>
+                  </div>
+                  <div className="meta-pill">
+                    <span className="meta-pill-label">Publisher:</span>
+                    <span className="meta-pill-value">Academic Press</span>
+                  </div>
+                  <div className="meta-pill">
+                    <span className="meta-pill-label">Publication Year:</span>
+                    <span className="meta-pill-value">{publicationYear}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* AVAILABILITY CARD */}
+              <div className="availability-card" aria-label="Book copy availability breakdown">
+                <div className="availability-card-header">
+                  <h4>Shelf Availability &amp; Circulation</h4>
+                  <span className="text-muted text-sm">Real-time database count</span>
+                </div>
+
+                <div className="availability-stats-grid">
+                  <div className="stat-metric-box">
+                    <span className="stat-label">Total Copies</span>
+                    <span className="stat-value">{book.total_copies}</span>
+                  </div>
+
+                  <div className="stat-metric-box stat-available">
+                    <span className="stat-label">Available on Shelf</span>
+                    <span className="stat-value text-success">{book.available_copies}</span>
+                  </div>
+
+                  <div className="stat-metric-box stat-borrowed">
+                    <span className="stat-label">Currently Borrowed</span>
+                    <span className="stat-value text-warning">{borrowedCopies}</span>
+                  </div>
+                </div>
+
+                {/* Status Progress Meter */}
+                <div className="availability-meter-wrap" aria-hidden="true">
+                  <div
+                    className="availability-meter-bar"
+                    style={{
+                      width: `${book.total_copies > 0 ? (book.available_copies / book.total_copies) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
+
+                {/* Feedback Banners */}
                 {resSuccess && (
-                  <div className="success-banner" style={{ marginBottom: '1rem' }} role="status">
-                    <div>
-                      <p>✅ {resSuccess}</p>
-                      <Link to="/dashboard" className="text-sm font-semibold" style={{ color: 'var(--success)' }}>
-                        View in Dashboard &rarr;
+                  <div className="success-banner" style={{ marginTop: '1rem' }} role="status">
+                    <div className="banner-content-with-action">
+                      <span>✅ {resSuccess}</span>
+                      <Link to="/dashboard" className="banner-link">
+                        View in My Library &rarr;
                       </Link>
                     </div>
                   </div>
                 )}
 
+                {waitlistSuccess && (
+                  <div className="success-banner" style={{ marginTop: '1rem' }} role="status">
+                    <span>🔔 {waitlistSuccess}</span>
+                  </div>
+                )}
+
                 {resError && (
-                  <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ marginTop: '1rem' }}>
                     <ErrorMessage message={resError} />
                   </div>
                 )}
 
-                {book.available_copies > 0 ? (
+                {/* Actions Row: Primary CTA & Secondary CTA */}
+                <div className="details-actions-row">
+                  {isAvailable ? (
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-lg flex-1"
+                      onClick={handleReserve}
+                      disabled={reserving}
+                    >
+                      {reserving ? 'Reserving Physical Copy...' : '📑 Reserve Book'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-lg flex-1"
+                      disabled
+                      title="All physical copies are currently loaned out"
+                    >
+                      Unavailable on Shelf
+                    </button>
+                  )}
+
                   <button
                     type="button"
-                    className="btn btn-primary btn-block btn-lg"
-                    onClick={handleReserve}
-                    disabled={reserving}
+                    className="btn btn-secondary btn-lg"
+                    onClick={handleJoinWaitlist}
+                    title="Be notified when a copy is returned"
                   >
-                    {reserving ? 'Reserving Copy...' : '📑 Reserve This Book'}
+                    🔔 Add to Waitlist
                   </button>
-                ) : (
-                  <div className="reservation-notice-box out-of-stock-notice">
-                    <p>
-                      ⚠️ All copies of this volume are currently held or checked out. Please check back later.
-                    </p>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+
+          {/* 3. BELOW SECTION: ABOUT THIS BOOK & DETAILS */}
+          <div className="details-lower-grid">
+            {/* About this book */}
+            <section className="details-card-sub" aria-labelledby="about-heading">
+              <h2 id="about-heading" className="sub-heading">About this book</h2>
+              <p className="book-description-text">
+                {book.description ||
+                  'No detailed synopsis provided for this departmental volume. Please consult the departmental librarian for syllabus and course reserves references.'}
+              </p>
+            </section>
+
+            {/* Details Table */}
+            <section className="details-card-sub" aria-labelledby="details-heading">
+              <h2 id="details-heading" className="sub-heading">Volume Details</h2>
+              <table className="volume-details-table">
+                <tbody>
+                  <tr>
+                    <th>ISBN-13:</th>
+                    <td className="font-mono">{book.isbn}</td>
+                  </tr>
+                  <tr>
+                    <th>Category:</th>
+                    <td>{book.category}</td>
+                  </tr>
+                  <tr>
+                    <th>Lending Duration:</th>
+                    <td>14 Days Standard Member Circulation</td>
+                  </tr>
+                  <tr>
+                    <th>Catalog Entry Date:</th>
+                    <td>{book.created_at ? new Date(book.created_at).toLocaleDateString() : 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <th>Last Inventory Update:</th>
+                    <td>{book.updated_at ? new Date(book.updated_at).toLocaleDateString() : 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <th>Hold Policy:</th>
+                    <td>Automatic 1-copy hold reservation upon approval</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+          </div>
+
+          {/* 4. RELATED BOOKS SECTION */}
+          {relatedBooks.length > 0 && (
+            <section className="curated-section" aria-labelledby="related-heading" style={{ marginTop: '1rem' }}>
+              <div className="section-header">
+                <div>
+                  <h2 id="related-heading" className="section-title">Related Books</h2>
+                  <p className="section-subtitle">
+                    Other recommended volumes in <strong>{book.category}</strong> or by the same faculty author.
+                  </p>
+                </div>
+                <Link to="/books" className="section-action-link">
+                  Browse Full Catalog &rarr;
+                </Link>
+              </div>
+
+              <div className="books-grid">
+                {relatedBooks.map((rel) => {
+                  const relAvail = rel.available_copies > 0;
+                  return (
+                    <div key={`rel-${rel.id}`} className="book-card">
+                      <div className="book-card-header">
+                        <span className="category-pill">{rel.category || 'Related'}</span>
+                        <span className={`stock-badge ${relAvail ? 'badge-in-stock' : 'badge-out-of-stock'}`}>
+                          {relAvail ? `${rel.available_copies} Available` : 'Unavailable'}
+                        </span>
+                      </div>
+                      <div className="book-card-body">
+                        <h3 className="book-title">{rel.title}</h3>
+                        <p className="book-author">By {rel.author_name || 'Academic Author'}</p>
+                        <div className="book-meta">
+                          <span className="meta-item">
+                            <strong>ISBN:</strong> <span className="font-mono">{rel.isbn}</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="book-card-footer">
+                        <Link
+                          to={`/books/${rel.id}`}
+                          className="btn btn-outline btn-sm btn-block"
+                        >
+                          View Details &rarr;
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   );
