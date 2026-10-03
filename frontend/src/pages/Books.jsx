@@ -6,6 +6,7 @@ import reservationService from '../services/reservationService';
 import BookSearch from '../components/BookSearch';
 import Loading from '../components/Loading';
 import ErrorMessage from '../components/ErrorMessage';
+import ReservationModal, { formatReservationError } from '../components/ReservationModal';
 
 function Books() {
   const [searchParams] = useSearchParams();
@@ -31,8 +32,11 @@ function Books() {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
 
-  // Reservation & Waitlist feedback state
-  const [reservingId, setReservingId] = useState(null);
+  // Reservation modal & feedback state
+  const [modalBook, setModalBook] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalError, setModalError] = useState('');
+  const [isConfirming, setIsConfirming] = useState(false);
   const [resSuccess, setResSuccess] = useState('');
   const [resError, setResError] = useState('');
 
@@ -162,34 +166,44 @@ function Books() {
     return result;
   }, [books, categoryFilter, authorFilter, sortBy]);
 
-  // Handler: Direct book hold reservation from catalog card
-  const handleReserve = async (book) => {
-    setReservingId(book.id);
-    setResSuccess('');
-    setResError('');
+  // Handler: Open confirmation modal
+  const handleOpenReserveModal = (book) => {
+    setModalBook(book);
+    setModalError('');
+    setIsModalOpen(true);
+  };
+
+  // Handler: Confirm reservation inside modal
+  const handleConfirmReservation = async () => {
+    if (!modalBook) return;
+    setIsConfirming(true);
+    setModalError('');
 
     try {
-      await reservationService.createReservation(book.id);
+      await reservationService.createReservation(modalBook.id);
       setResSuccess(
-        `Successfully placed a hold for "${book.title}"! A physical copy has been reserved for you.`
+        `Your reservation has been confirmed for "${modalBook.title}". A copy has been reserved for you.`
       );
-      // Instantaneously update local copy count
+      setResError('');
+      // Instantaneously update local copy count without a full page reload
       setBooks((prev) =>
         prev.map((b) =>
-          b.id === book.id
+          b.id === modalBook.id
             ? { ...b, available_copies: Math.max(0, b.available_copies - 1) }
             : b
         )
       );
+      setIsModalOpen(false);
+      setModalBook(null);
     } catch (err) {
       console.error('Reservation error:', err);
-      if (err.status === 409) {
-        setResError(`You already have an active reservation for "${book.title}".`);
-      } else {
-        setResError(err.message || 'Unable to reserve book. Please try again.');
+      const friendlyMsg = formatReservationError(err, modalBook.title);
+      setModalError(friendlyMsg);
+      if (err.status === 401) {
+        setResError(friendlyMsg);
       }
     } finally {
-      setReservingId(null);
+      setIsConfirming(false);
     }
   };
 
@@ -393,10 +407,9 @@ function Books() {
                       <button
                         type="button"
                         className="btn btn-primary btn-sm btn-reserve"
-                        onClick={() => handleReserve(book)}
-                        disabled={reservingId === book.id}
+                        onClick={() => handleOpenReserveModal(book)}
                       >
-                        {reservingId === book.id ? 'Reserving...' : '📑 Reserve'}
+                        📑 Reserve
                       </button>
                     ) : (
                       <button
@@ -422,6 +435,22 @@ function Books() {
           })}
         </div>
       )}
+
+      {/* 5. CONFIRMATION RESERVATION MODAL */}
+      <ReservationModal
+        isOpen={isModalOpen}
+        book={modalBook}
+        onConfirm={handleConfirmReservation}
+        onClose={() => {
+          if (!isConfirming) {
+            setIsModalOpen(false);
+            setModalBook(null);
+            setModalError('');
+          }
+        }}
+        isSubmitting={isConfirming}
+        error={modalError}
+      />
     </div>
   );
 }

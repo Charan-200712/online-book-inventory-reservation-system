@@ -4,6 +4,7 @@ import bookService from '../services/bookService';
 import reservationService from '../services/reservationService';
 import Loading from '../components/Loading';
 import ErrorMessage from '../components/ErrorMessage';
+import ReservationModal, { formatReservationError } from '../components/ReservationModal';
 
 function BookDetails() {
   const { id } = useParams();
@@ -13,7 +14,9 @@ function BookDetails() {
   const [error, setError] = useState('');
 
   // Hold reservation & waitlist action states
-  const [reserving, setReserving] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalError, setModalError] = useState('');
+  const [isConfirming, setIsConfirming] = useState(false);
   const [resSuccess, setResSuccess] = useState('');
   const [resError, setResError] = useState('');
   const [waitlistSuccess, setWaitlistSuccess] = useState('');
@@ -59,11 +62,19 @@ function BookDetails() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [id]);
 
-  // Handle book reservation
-  const handleReserve = async () => {
+  // Open confirmation modal
+  const handleOpenReserveModal = () => {
+    if (!book || book.available_copies <= 0) return;
+    setModalError('');
+    setIsModalOpen(true);
+  };
+
+  // Confirm reservation inside modal
+  const handleConfirmReservation = async () => {
     if (!book || book.available_copies <= 0) return;
 
-    setReserving(true);
+    setIsConfirming(true);
+    setModalError('');
     setResSuccess('');
     setResError('');
     setWaitlistSuccess('');
@@ -71,20 +82,21 @@ function BookDetails() {
     try {
       await reservationService.createReservation(book.id);
       setResSuccess(
-        `Successfully placed a hold for "${book.title}"! A physical copy is reserved for you.`
+        `Your reservation has been confirmed for "${book.title}". A copy has been reserved for you.`
       );
-      // Reload updated book data to refresh available_copies
+      // Reload updated book data to refresh available_copies without full page reload
       const updated = await bookService.getBookById(id);
       setBook(updated);
+      setIsModalOpen(false);
     } catch (err) {
       console.error('Reservation error:', err);
-      if (err.status === 409) {
-        setResError('You already have an active reservation for this book.');
-      } else {
-        setResError(err.message || 'Unable to reserve book. Please try again.');
+      const friendlyMsg = formatReservationError(err, book.title);
+      setModalError(friendlyMsg);
+      if (err.status === 401) {
+        setResError(friendlyMsg);
       }
     } finally {
-      setReserving(false);
+      setIsConfirming(false);
     }
   };
 
@@ -249,10 +261,9 @@ function BookDetails() {
                     <button
                       type="button"
                       className="btn btn-primary btn-lg flex-1"
-                      onClick={handleReserve}
-                      disabled={reserving}
+                      onClick={handleOpenReserveModal}
                     >
-                      {reserving ? 'Reserving Physical Copy...' : '📑 Reserve Book'}
+                      📑 Reserve Book
                     </button>
                   ) : (
                     <button
@@ -374,6 +385,21 @@ function BookDetails() {
           )}
         </>
       )}
+
+      {/* Confirmation Reservation Modal */}
+      <ReservationModal
+        isOpen={isModalOpen}
+        book={book}
+        onConfirm={handleConfirmReservation}
+        onClose={() => {
+          if (!isConfirming) {
+            setIsModalOpen(false);
+            setModalError('');
+          }
+        }}
+        isSubmitting={isConfirming}
+        error={modalError}
+      />
     </div>
   );
 }
