@@ -19,6 +19,16 @@ async function startServer() {
     console.log(`[SERVER] Health check: http://localhost:${PORT}/api/health`);
   });
 
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n[ERROR] Port ${PORT} is already in use by another process.`);
+      console.error(`Please close any existing terminal running on port ${PORT} and try again.\n`);
+      process.exit(1);
+    } else {
+      console.error('[SERVER] Server error:', err.message);
+    }
+  });
+
   // Graceful shutdown
   const shutdown = async () => {
     console.log('\n[SERVER] Shutting down gracefully...');

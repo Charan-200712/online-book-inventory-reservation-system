@@ -1,61 +1,71 @@
 @echo off
 title Online Book Inventory - Startup Launcher
-setlocal EnableDelayedExpansion
 
 echo ===============================================================================
 echo            ONLINE BOOK INVENTORY ^& RESERVATION SYSTEM - LAUNCHER
 echo ===============================================================================
 echo.
 
-:: 1. Verify Node.js and npm are installed and in PATH
+:: 1. Verify Node.js is installed
 where node >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
+if errorlevel 1 (
     echo [ERROR] Node.js is not found in your system PATH!
-    echo Please install Node.js (v18+) from https://nodejs.org/ and try again.
+    echo Please install Node.js version 18 or higher from https://nodejs.org/
     echo.
     pause
     exit /b 1
 )
 
+:: 2. Verify npm is installed
 where npm >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
+if errorlevel 1 (
     echo [ERROR] npm is not found in your system PATH!
-    echo Please install Node.js/npm and ensure it is added to your PATH.
+    echo Please ensure npm is installed and added to your system PATH.
     echo.
     pause
     exit /b 1
 )
 
-:: 2. Display MySQL requirement notice
+:: 3. Database Reminder Notice
 echo [NOTICE] Database Requirement:
-echo Make sure MySQL/XAMPP is running before starting the application.
-echo Default database: library_db (port 3306).
+echo   Make sure MySQL / XAMPP is currently running on port 3306.
+echo   Database name: library_db
 echo.
 
-:: Set root directory path safely
-set "PROJECT_ROOT=%~dp0"
+:: 4. Free up ports 5000 and 5173 if lingering processes exist
+echo [PREPARATION] Ensuring ports 5000 and 5173 are free...
+call npx pm2 stop all >nul 2>nul
+for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":5000" ^| findstr "LISTENING"') do (
+    taskkill /F /PID %%a >nul 2>nul
+)
+for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":5173" ^| findstr "LISTENING"') do (
+    taskkill /F /PID %%a >nul 2>nul
+)
 
-:: 3. Start Backend Server in a new dedicated Command Prompt window
-echo [STARTING] Launching Backend Server on port 5000...
-start "Book Inventory - Backend API (Port 5000)" cmd /k "cd /d "%PROJECT_ROOT%backend" && echo =================================================== && echo   Online Book Inventory Backend Server (Port 5000) && echo   Health check: http://localhost:5000/api/health && echo =================================================== && npm run dev"
+:: 5. Launch Backend Server in a new window
+echo [1/2] Starting Backend API Server (Port 5000)...
+start "Book Inventory - Backend API (Port 5000)" /D "%~dp0backend" cmd /k "title Book Inventory - Backend (Port 5000) && echo =================================================== && echo   Online Book Inventory Backend Server (Port 5000) && echo   Health check: http://localhost:5000/api/health && echo =================================================== && npm run dev"
 
-:: Brief 2-second pause to allow backend initialization before frontend starts
+:: Brief 2-second pause to allow backend initialization
 timeout /t 2 /nobreak >nul
 
-:: 4. Start Frontend Client in a new dedicated Command Prompt window
-echo [STARTING] Launching Frontend Client on port 5173...
-start "Book Inventory - Frontend (Port 5173)" cmd /k "cd /d "%PROJECT_ROOT%frontend" && echo =================================================== && echo   Online Book Inventory Frontend (Port 5173) && echo   Application URL: http://localhost:5173/ && echo =================================================== && npm run dev"
+:: 5. Launch Frontend Server in a new window
+echo [2/2] Starting Frontend Vite Server (Port 5173)...
+start "Book Inventory - Frontend (Port 5173)" /D "%~dp0frontend" cmd /k "title Book Inventory - Frontend (Port 5173) && echo =================================================== && echo   Online Book Inventory Frontend (Port 5173) && echo   Application URL: http://localhost:5173/ && echo =================================================== && npm run dev"
 
 echo.
 echo ===============================================================================
-echo [SUCCESS] Both Backend and Frontend services have been launched!
+echo [SUCCESS] Both servers have been launched in separate Command Prompt windows!
 echo.
-echo   - Backend API:    http://localhost:5000/
-echo   - Health Probe:   http://localhost:5000/api/health
-echo   - Frontend App:   http://localhost:5173/
+echo   - Frontend Application: http://localhost:5173/
+echo   - Backend API Health:   http://localhost:5000/api/health
+echo.
+echo Default Logins:
+echo   - Admin:   admin@library.edu / Admin@123
+echo   - Student: rahul.sharma@college.edu / Student@123
 echo.
 echo To stop the application:
-echo   Close both the Backend and Frontend Command Prompt windows (or press Ctrl+C).
+echo   Close both the Backend and Frontend Command Prompt windows.
 echo ===============================================================================
 echo.
 pause
