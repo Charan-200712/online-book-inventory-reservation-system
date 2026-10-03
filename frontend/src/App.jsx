@@ -61,6 +61,14 @@ function App() {
               }
             />
             <Route
+              path="/my-library"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin"
               element={
                 <ProtectedRoute requiredRole="ADMIN">

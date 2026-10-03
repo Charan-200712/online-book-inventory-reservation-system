@@ -1,12 +1,41 @@
-import React from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const userMenuRef = useRef(null);
+  const notifRef = useRef(null);
+
+  // Close dropdowns on route changes
+  useEffect(() => {
+    setUserMenuOpen(false);
+    setNotificationsOpen(false);
+  }, [location.pathname]);
+
+  // Click outside listener for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setNotificationsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = async () => {
+    setUserMenuOpen(false);
     await logout();
     navigate('/login');
   };
@@ -14,12 +43,14 @@ function Navbar() {
   return (
     <header className="navbar">
       <div className="navbar-container">
+        {/* Brand Logo */}
         <Link to="/" className="navbar-brand">
-          <span className="brand-icon">📚</span>
+          <span className="brand-icon" aria-hidden="true">📚</span>
           <span className="brand-text">Departmental Library</span>
         </Link>
 
-        <nav className="navbar-nav">
+        {/* Primary Navigation Links */}
+        <nav className="navbar-nav" aria-label="Main Navigation">
           <NavLink
             to="/"
             className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
@@ -44,9 +75,11 @@ function Navbar() {
               </NavLink>
               <NavLink
                 to="/dashboard"
-                className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                className={({ isActive }) =>
+                  isActive || location.pathname === '/my-library' ? 'nav-link active' : 'nav-link'
+                }
               >
-                Dashboard
+                My Library
               </NavLink>
               {user?.role === 'ADMIN' && (
                 <NavLink
@@ -56,23 +89,116 @@ function Navbar() {
                   Admin
                 </NavLink>
               )}
+            </>
+          ) : null}
+        </nav>
 
-              <div className="nav-user-section">
-                <span className="user-greeting">
-                  Hello, <strong>{user?.name || 'User'}</strong>
-                </span>
-                {user?.role === 'ADMIN' && (
-                  <span className="badge badge-admin" title="Administrator Privileges">
-                    Admin
-                  </span>
-                )}
+        {/* Right Side: Notifications & User Profile */}
+        <div className="navbar-right">
+          {isAuthenticated ? (
+            <>
+              {/* Notification Bell */}
+              <div className="notification-trigger-wrap" ref={notifRef}>
                 <button
                   type="button"
-                  className="btn btn-outline btn-sm logout-btn"
-                  onClick={handleLogout}
+                  className="notification-btn"
+                  onClick={() => {
+                    setNotificationsOpen((prev) => !prev);
+                    setUserMenuOpen(false);
+                  }}
+                  aria-label="View notifications"
+                  title="Notifications"
                 >
-                  Logout
+                  🔔
+                  <span className="notification-badge">2</span>
                 </button>
+
+                {notificationsOpen && (
+                  <div className="notification-popover" role="dialog" aria-label="Notifications panel">
+                    <div className="notification-popover-header">
+                      <h4>Library Notifications</h4>
+                      <span className="badge badge-in-stock">2 New</span>
+                    </div>
+                    <div className="notification-list">
+                      <div className="notification-item">
+                        <span className="notification-item-icon">📑</span>
+                        <div>
+                          <strong>Hold Reservation</strong>
+                          <p>Reservations are held for pickup upon admin approval.</p>
+                        </div>
+                      </div>
+                      <div className="notification-item">
+                        <span className="notification-item-icon">⏳</span>
+                        <div>
+                          <strong>Circulation Policy</strong>
+                          <p>Standard student loan period is 14 days from checkout date.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* User Avatar, Name & Dropdown */}
+              <div className="user-menu-wrap" ref={userMenuRef}>
+                <button
+                  type="button"
+                  className="user-menu-trigger"
+                  onClick={() => {
+                    setUserMenuOpen((prev) => !prev);
+                    setNotificationsOpen(false);
+                  }}
+                  aria-expanded={userMenuOpen}
+                  aria-haspopup="true"
+                >
+                  <div className="user-avatar-circle" aria-hidden="true">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <span className="user-name-label">{user?.name || 'User'}</span>
+                  <span className="user-menu-chevron" aria-hidden="true">▼</span>
+                </button>
+
+                {userMenuOpen && (
+                  <div className="user-menu-dropdown" role="menu">
+                    <div className="dropdown-user-header">
+                      <p className="dropdown-user-name">{user?.name}</p>
+                      <p className="dropdown-user-email">{user?.email}</p>
+                      <span
+                        className={`badge ${user?.role === 'ADMIN' ? 'badge-admin' : 'badge-in-stock'}`}
+                        style={{ marginTop: '0.4rem' }}
+                      >
+                        {user?.role === 'ADMIN' ? 'Administrator' : 'Department Member'}
+                      </span>
+                    </div>
+
+                    <Link to="/dashboard" className="dropdown-item" role="menuitem">
+                      <span>📖</span> My Library
+                    </Link>
+                    <Link to="/dashboard" className="dropdown-item" role="menuitem">
+                      <span>📑</span> My Reservations
+                    </Link>
+                    <Link to="/dashboard" className="dropdown-item" role="menuitem">
+                      <span>📂</span> My Loans
+                    </Link>
+
+                    {user?.role === 'ADMIN' && (
+                      <Link to="/admin" className="dropdown-item" role="menuitem">
+                        <span>👑</span> Admin Management
+                      </Link>
+                    )}
+
+                    <div className="dropdown-divider" />
+
+                    <button
+                      type="button"
+                      className="dropdown-item danger logout-btn"
+                      onClick={handleLogout}
+                      role="menuitem"
+                    >
+                      <span>🚪</span> Logout
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -85,13 +211,13 @@ function Navbar() {
               </NavLink>
               <NavLink
                 to="/register"
-                className={({ isActive }) => (isActive ? 'btn btn-primary btn-sm' : 'btn btn-primary btn-sm')}
+                className="btn btn-primary btn-sm"
               >
                 Register
               </NavLink>
             </div>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );
