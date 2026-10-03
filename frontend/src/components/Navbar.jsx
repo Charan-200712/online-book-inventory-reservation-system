@@ -9,11 +9,13 @@ function Navbar() {
   const location = useLocation();
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const userMenuRef = useRef(null);
 
   // Close dropdown on route changes
   useEffect(() => {
     setUserMenuOpen(false);
+    setMobileNavOpen(false);
   }, [location.pathname]);
 
   // Click outside listener for user dropdown menu
@@ -37,6 +39,17 @@ function Navbar() {
   return (
     <header className="navbar">
       <div className="navbar-container">
+        {/* Mobile Hamburger Toggle */}
+        <button
+          type="button"
+          className="mobile-nav-toggle"
+          onClick={() => setMobileNavOpen((prev) => !prev)}
+          aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={mobileNavOpen}
+        >
+          {mobileNavOpen ? '✕' : '☰'}
+        </button>
+
         {/* Brand Logo */}
         <Link to="/" className="navbar-brand">
           <span className="brand-icon" aria-hidden="true">📚</span>
@@ -44,7 +57,7 @@ function Navbar() {
         </Link>
 
         {/* Primary Navigation Links */}
-        <nav className="navbar-nav" aria-label="Main Navigation">
+        <nav className={`navbar-nav ${mobileNavOpen ? 'mobile-open' : ''}`} aria-label="Main Navigation">
           <NavLink
             to="/"
             className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
@@ -99,10 +112,7 @@ function Navbar() {
                 <button
                   type="button"
                   className="user-menu-trigger"
-                  onClick={() => {
-                    setUserMenuOpen((prev) => !prev);
-                    setNotificationsOpen(false);
-                  }}
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
                   aria-expanded={userMenuOpen}
                   aria-haspopup="true"
                 >

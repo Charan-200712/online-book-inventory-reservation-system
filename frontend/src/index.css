@@ -220,6 +220,23 @@ body {
   color: var(--navy);
 }
 
+.mobile-nav-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.6rem;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--navy);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mobile-nav-toggle:hover {
+  background-color: var(--bg-subtle);
+}
+
 .navbar-nav {
   display: flex;
   align-items: center;
@@ -2754,6 +2771,12 @@ body {
   color: var(--text-muted);
 }
 
+/* Universal Accessible Focus States */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 /* ==========================================================================
    Responsive Adaptations
    ========================================================================== */
@@ -2762,17 +2785,37 @@ body {
     padding: 1.5rem 1rem;
   }
 
+  .mobile-nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .navbar-container {
     flex-wrap: wrap;
     gap: 0.75rem;
   }
 
   .navbar-nav {
+    display: none;
     order: 3;
     width: 100%;
-    overflow-x: auto;
-    padding-top: 0.5rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding-top: 0.75rem;
     border-top: 1px solid var(--border);
+  }
+
+  .navbar-nav.mobile-open {
+    display: flex;
+    animation: popoverFadeIn 0.15s ease-out;
+  }
+
+  .nav-link {
+    display: block;
+    width: 100%;
+    padding: 0.65rem 0.85rem;
   }
 
   .hero-title {
