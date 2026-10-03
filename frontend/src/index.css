@@ -1782,23 +1782,30 @@ body {
 }
 
 /* ==========================================================================
-   Dashboard & Tables (Academic Data Presentation)
+   Dashboard & My Library (Modern Academic Navy Experience)
    ========================================================================== */
-.dashboard-overview-grid {
+.dashboard-overview-grid,
+.my-library-overview-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 380px 1fr;
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
-@media (max-width: 800px) {
-  .dashboard-overview-grid {
+@media (max-width: 900px) {
+  .dashboard-overview-grid,
+  .my-library-overview-grid {
     grid-template-columns: 1fr;
   }
 }
 
-.profile-card {
+.profile-card,
+.profile-summary-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -1821,6 +1828,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .profile-name {
@@ -1841,11 +1849,34 @@ body {
   gap: 1rem;
 }
 
+.my-library-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.15rem;
+}
+
+@media (max-width: 540px) {
+  .my-library-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .metric-box {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 1rem;
+  gap: 1rem;
+  padding: 1.25rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.metric-box:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-hover);
 }
 
 .metric-icon {
@@ -1854,7 +1885,7 @@ body {
 }
 
 .metric-number {
-  font-size: 1.5rem;
+  font-size: 1.65rem;
   font-weight: 800;
   color: var(--navy);
   line-height: 1.2;
@@ -1865,7 +1896,44 @@ body {
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
+}
+
+/* My Library Tabs Navigation */
+.my-library-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.85rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  font-family: var(--font-sans);
+}
+
+.tab-btn:hover {
+  color: var(--navy);
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.pickup-info-text {
+  font-size: 0.85rem;
 }
 
 /* Dashboard Section & Tables */
