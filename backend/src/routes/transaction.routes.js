@@ -14,5 +14,6 @@ router.get('/overdue', authenticate, authorizeRoles('ADMIN'), transactionControl
 // Admin circulation actions
 router.post('/issue', authenticate, authorizeRoles('ADMIN'), transactionController.issueBook);
 router.post('/:id/return', authenticate, authorizeRoles('ADMIN'), transactionController.returnBook);
+router.post('/:id/renew', authenticate, authorizeRoles('ADMIN'), transactionController.renewLoan);
 
 module.exports = router;

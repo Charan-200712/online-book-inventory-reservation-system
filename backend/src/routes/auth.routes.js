@@ -15,4 +15,7 @@ router.get('/me', authenticate, authController.getMe);
 // Protected test route (requires valid JWT with ADMIN role)
 router.get('/admin-test', authenticate, authorizeRoles('ADMIN'), authController.adminTest);
 
+// Admin user/member management
+router.get('/users', authenticate, authorizeRoles('ADMIN'), authController.getAllUsers);
+
 module.exports = router;

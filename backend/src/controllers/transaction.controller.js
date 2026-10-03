@@ -101,9 +101,29 @@ const getOverdueTransactions = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Controller: Renew loan (Admin only)
+ * POST /api/transactions/:id/renew
+ */
+const renewLoan = asyncHandler(async (req, res) => {
+  const transactionId = parseInt(req.params.id, 10);
+  if (isNaN(transactionId) || transactionId <= 0) {
+    throw ApiError.badRequest('Invalid transaction ID. Must be a positive integer.');
+  }
+
+  const transaction = await transactionService.renewLoan(transactionId);
+
+  return res.status(200).json({
+    success: true,
+    message: 'Loan renewed successfully for an additional 14 days',
+    transaction
+  });
+});
+
 module.exports = {
   issueBook,
   returnBook,
+  renewLoan,
   getUserTransactions,
   getAllTransactions,
   getOverdueTransactions

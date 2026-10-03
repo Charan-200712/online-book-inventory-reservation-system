@@ -44,6 +44,11 @@ export const adminService = {
     return response;
   },
 
+  async cancelReservation(id) {
+    const response = await api.put(`/reservations/${id}/cancel`, {});
+    return response;
+  },
+
   // --- System-wide Circulation Transactions ---
   async getAllTransactions() {
     const response = await api.get('/transactions/all');
@@ -53,6 +58,27 @@ export const adminService = {
   async getOverdueTransactions() {
     const response = await api.get('/transactions/overdue');
     return response.overdueTransactions || [];
+  },
+
+  async issueBook(payload) {
+    const response = await api.post('/transactions/issue', payload);
+    return response;
+  },
+
+  async returnBook(id) {
+    const response = await api.post(`/transactions/${id}/return`, {});
+    return response;
+  },
+
+  async renewLoan(id) {
+    const response = await api.post(`/transactions/${id}/renew`, {});
+    return response;
+  },
+
+  // --- Member / User Management ---
+  async getAllUsers() {
+    const response = await api.get('/auth/users');
+    return response.users || [];
   },
 };
 

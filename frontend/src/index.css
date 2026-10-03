@@ -850,6 +850,13 @@ body {
 }
 
 /* Button Sizes */
+.btn-xs {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: var(--radius-xs);
+  font-weight: 500;
+}
+
 .btn-sm {
   padding: 0.35rem 0.75rem;
   font-size: 0.825rem;
@@ -947,10 +954,27 @@ body {
 }
 
 /* Pending: Amber */
-.status-badge.status-pending {
+.status-badge.status-pending,
+.badge-pending {
   background-color: var(--warning-bg);
   color: var(--warning-text);
   border: 1px solid var(--warning-border);
+}
+
+/* Completed: Subtle Gray/Slate */
+.status-badge.status-completed,
+.badge-completed {
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+/* Cancelled / Danger: Red */
+.status-badge.status-cancelled,
+.badge-cancelled {
+  background-color: var(--error-bg);
+  color: var(--error-text);
+  border: 1px solid var(--error-border);
 }
 
 /* Admin Role Badge */

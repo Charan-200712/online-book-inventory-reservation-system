@@ -286,9 +286,49 @@ async function getOverdueTransactions() {
   return transactions;
 }
 
+/**
+ * Renews an active loan, extending the due date by the standard loan duration (Admin only).
+ *
+ * @param {number} transactionId
+ * @returns {Promise<Object>} Updated transaction
+ */
+async function renewLoan(transactionId) {
+  const loanDays = getLoanDays();
+  const [rows] = await db.query(
+    'SELECT * FROM transactions WHERE id = ?',
+    [transactionId]
+  );
+
+  if (rows.length === 0) {
+    throw ApiError.notFound('Transaction not found');
+  }
+
+  const tx = rows[0];
+  if (tx.status === 'RETURNED') {
+    throw ApiError.conflict('Cannot renew a book that has already been returned');
+  }
+
+  // Extend due date by loanDays from current due date or today, whichever is later
+  await db.query(
+    'UPDATE transactions SET due_date = DATE_ADD(GREATEST(due_date, CURDATE()), INTERVAL ? DAY), status = "ISSUED" WHERE id = ?',
+    [loanDays, transactionId]
+  );
+
+  const [updatedRows] = await db.query(
+    `SELECT t.*, b.title AS book_title
+     FROM transactions t
+     JOIN books b ON t.book_id = b.id
+     WHERE t.id = ?`,
+    [transactionId]
+  );
+
+  return updatedRows[0];
+}
+
 module.exports = {
   issueBook,
   returnBook,
+  renewLoan,
   getUserTransactions,
   getAllTransactions,
   getOverdueTransactions

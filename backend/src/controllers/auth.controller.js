@@ -62,10 +62,24 @@ const adminTest = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Controller: Get all registered users (Admin only)
+ * GET /api/auth/users
+ */
+const getAllUsers = asyncHandler(async (req, res) => {
+  const users = await authService.getAllUsers();
+  return res.status(200).json({
+    success: true,
+    count: users.length,
+    users
+  });
+});
+
 module.exports = {
   register,
   login,
   logout,
   getMe,
-  adminTest
+  adminTest,
+  getAllUsers
 };

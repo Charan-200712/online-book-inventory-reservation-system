@@ -139,8 +139,21 @@ async function getUserProfile(userId) {
   return rows[0];
 }
 
+/**
+ * Retrieves all registered library users/members (Admin only).
+ *
+ * @returns {Promise<Array>}
+ */
+async function getAllUsers() {
+  const [rows] = await db.query(
+    'SELECT id, name, email, role, created_at FROM users ORDER BY id ASC'
+  );
+  return rows;
+}
+
 module.exports = {
   registerUser,
   loginUser,
-  getUserProfile
+  getUserProfile,
+  getAllUsers
 };
