@@ -47,6 +47,10 @@ function checkMySQL(callback) {
 // 2. Terminate any existing processes holding ports 5000 and 5173
 function freePorts() {
   console.log('[PREPARATION] Checking and freeing ports 5000 and 5173...');
+  try {
+    execSync('npx --no-install pm2 kill', { stdio: 'ignore' });
+  } catch (_) {}
+
   const isWindows = process.platform === 'win32';
   if (!isWindows) return;
 
@@ -71,6 +75,11 @@ function freePorts() {
       // Port is already free
     }
   });
+
+  // Short pause to ensure Windows TCP stack releases sockets
+  try {
+    execSync('ping 127.0.0.1 -n 2 > nul', { stdio: 'ignore' });
+  } catch (_) {}
 }
 
 // 3. Open browser utility
