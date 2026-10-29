@@ -7,6 +7,7 @@ echo ===========================================================================
 echo.
 
 echo Stopping any running backend and frontend processes...
+call npx --no-install pm2 kill >nul 2>nul
 
 :: 1. Stop processes listening on port 5000 (Backend)
 for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":5000" ^| findstr "LISTENING"') do (

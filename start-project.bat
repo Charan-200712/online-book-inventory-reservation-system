@@ -34,6 +34,7 @@ echo.
 
 :: 4. Free up ports 5000 and 5173 if lingering processes exist
 echo [PREPARATION] Ensuring ports 5000 and 5173 are free...
+call npx --no-install pm2 kill >nul 2>nul
 for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":5000" ^| findstr "LISTENING"') do (
     taskkill /F /T /PID %%a >nul 2>nul
 )

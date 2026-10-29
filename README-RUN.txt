@@ -20,7 +20,7 @@ HOW TO START THE APPLICATION (ONE-CLICK)
 2. START OPTIONS (Choose any ONE):
 
    Option A - Double-Click Launcher (Recommended for Windows):
-     Double-click "start-project.bat" (or "start project.bat") in this folder.
+     Double-click "start-project.bat" in this folder.
      - Automatically checks and frees ports 5000 and 5173.
      - Starts both the Backend and Frontend servers.
      - Automatically launches your default web browser to http://localhost:5173/.
@@ -51,6 +51,6 @@ DEFAULT SEEDED TEST ACCOUNTS
 HOW TO STOP THE APPLICATION
 -------------------------------------------------------------------------------
 
-  - Double-click "stop-project.bat" (or "stop project.bat").
+  - Double-click "stop-project.bat".
   - Or if running in terminal via 'npm start', press Ctrl + C.
 ===============================================================================
